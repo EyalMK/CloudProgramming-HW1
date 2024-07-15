@@ -4,14 +4,21 @@ import pandas as pd
 
 
 class DataFrameHandler:
-    def __init__(self, db_handler):
+    def __init__(self, db_handler, utils):
         self.raw_df = None
         self.df = None
-        self.filters_data = {}
+        self.utils = utils
+        self.filters_data = {
+            'documents': [],
+            'users': [],
+            'descriptions': [],
+            'uploaded-logs': []
+        }
         self.activity_over_time = []
         self.document_usage = []
         self.user_activity = []
-        self.alerts_df = None
+        self.selected_log_path = ONSHAPE_LOGS_PATH  # Default data source
+        self.alerts_df = pd.DataFrame()
         self.db_handler = db_handler
         self.initialize_df()
         self.process_df()
@@ -19,13 +26,15 @@ class DataFrameHandler:
 
     def initialize_df(self):
         try:
-            data = self.db_handler.read_from_database(ONSHAPE_LOGS_PATH)
+            data = self.db_handler.read_from_database(ONSHAPE_LOGS_PATH)  # OnShape logs path acts as the default
+            # data source
             if data is not None:
-                self.df = self.raw_df = pd.DataFrame(data)
+                self._dataframes_from_data(data)
         except Exception as e:
             raise e
 
     def process_df(self):
+        self._populate_uploaded_logs()
         if self.raw_df is not None:
             self._convert_time_column()
             self._extract_date_for_grouping()
@@ -33,6 +42,22 @@ class DataFrameHandler:
             self._group_activity_over_time()
             self._group_document_usage()
             self._group_user_activity()
+
+    def update_with_new_data(self, collection_name):
+        try:
+            data = self.db_handler.read_from_database(collection_name)
+            # Only update with new data if it is set to default or if there is no data processed yet
+            if data is not None and (collection_name == ONSHAPE_LOGS_PATH or self.raw_df is None):
+                # Process the newly uploaded data
+                self._dataframes_from_data(data, collection_source=collection_name)
+                self.process_df()  # Reprocess the DataFrame
+        except Exception as e:
+            self.utils.logger.error(f"Error updating with new data: {str(e)}")
+
+    def _dataframes_from_data(self, data, collection_source=ONSHAPE_LOGS_PATH):
+        self.selected_log_path = collection_source
+        first_key = next(iter(data))
+        self.df = self.raw_df = pd.DataFrame(data[first_key]['data'])
 
     def _convert_time_column(self):
         self.df['Time'] = pd.to_datetime(self.raw_df['Time'])
@@ -45,14 +70,16 @@ class DataFrameHandler:
         logs = []
         if data:
             for key in data:
-                logs.append(data[key].fileName)  # Append only file names.
+                logs.append(data[key]['fileName'])
+            if self.raw_df is None:  # if the default path is not populated with data, populate it with the uploaded
+                # logs
+                self._dataframes_from_data(data, collection_source=UPLOADED_LOGS_PATH)
         self.filters_data['uploaded-logs'] = logs
 
     def _populate_filters(self):
         self.filters_data['documents'] = [doc for doc in self.raw_df['Document'].unique()]
         self.filters_data['users'] = [user for user in self.raw_df['User'].unique()]
         self.filters_data['descriptions'] = [desc for desc in self.raw_df['Description'].unique()]
-        self._populate_uploaded_logs()
 
     def _group_activity_over_time(self):
         self.activity_over_time = self.raw_df.groupby('Date').size().reset_index(name='ActivityCount')

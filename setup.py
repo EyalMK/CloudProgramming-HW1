@@ -1,4 +1,8 @@
 from setuptools import setup, find_packages
+import codecs
+
+with codecs.open('README.md', 'r', 'utf-8') as f:
+    long_description = f.read()
 
 setup(
     name='ShapeFlow Monitor',
@@ -21,7 +25,7 @@ setup(
     },
     author='Team Unicorn',
     description='onShape Log Analysis Dashboard',
-    long_description=open('README.md').read(),
+    long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/EyalMK/ShapeFlow-Monitor-Cloud',
     classifiers=[

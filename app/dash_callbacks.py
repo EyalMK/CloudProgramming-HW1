@@ -4,7 +4,7 @@ import pandas as pd
 import dash
 from dash.dependencies import Input, Output, State
 
-from config.constants import UPLOADED_LOGS_PATH
+from config.constants import UPLOADED_LOGS_PATH, ONSHAPE_LOGS_PATH
 from dataframes.dataframe_handler import DataFrameHandler
 from utils.utilities import Utilities
 
@@ -80,8 +80,11 @@ class DashCallbacks:
 
                 try:
                     json_data = json.loads(decoded)
-                    json_data["fileName"] = filename
-                    self.page_layouts.uploaded_json = json_data  # Store JSON data
+                    data_to_store = {
+                        "fileName": filename,
+                        "data": json_data
+                    }
+                    self.page_layouts.uploaded_json = data_to_store  # Store JSON data
                     return f"{filename}", False  # Enable submit button
                 except json.JSONDecodeError:
                     self.utils.logger.error(f"Failed to parse JSON: {filename}")
@@ -92,18 +95,25 @@ class DashCallbacks:
         @self.dash_app.callback(
             Output('submit-status', 'children'),
             [Input('submit-button', 'n_clicks')],
-            [State('upload-json', 'contents')],
+            [State('upload-json', 'contents'),
+             State('default-data-source', 'value')],
             prevent_initial_call=True
         )
-        def handle_submit(n_clicks, contents):
+        def handle_submit(n_clicks, contents, default_data_source):
             if n_clicks is not None and contents is not None:
                 try:
                     content_type, content_string = contents.split(',')
                     decoded = base64.b64decode(content_string)
                     size_kb = len(decoded) / 1024  # size in KB
 
-                    self.db_handler.write_to_database(UPLOADED_LOGS_PATH, self.page_layouts.uploaded_json)
+                    collection_name = ONSHAPE_LOGS_PATH if default_data_source else UPLOADED_LOGS_PATH
+
+                    self.db_handler.write_to_database(collection_name, self.page_layouts.uploaded_json)
                     self.utils.logger.info(f"Uploaded JSON of size: {size_kb:.2f} KB")
+
+                    # Notify DataFrameHandler to update its state
+                    self.df_handler.update_with_new_data(collection_name)
+
                     return "File has been uploaded successfully."
                 except Exception as e:
                     self.utils.logger.error(f"Error uploading JSON: {str(e)}")

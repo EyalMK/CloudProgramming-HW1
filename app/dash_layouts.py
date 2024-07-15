@@ -2,7 +2,7 @@ from datetime import datetime
 
 from app.dash_callbacks import DashCallbacks
 from dataframes.dataframe_handler import DataFrameHandler
-from config.constants import START_DATE, END_DATE, PROJECT_NAME
+from config.constants import START_DATE, END_DATE, PROJECT_NAME, UPLOADED_LOGS_PATH, ONSHAPE_LOGS_PATH
 import dash
 from dash import dcc
 from dash import html
@@ -15,8 +15,9 @@ class DashPageLayouts:
     def __init__(self, dash_app: dash.Dash, db_handler: 'DatabaseHandler', utils):
         self.dash_app = dash_app
         self.db_handler = db_handler
-        self.df_handler = DataFrameHandler(db_handler)
+        self.df_handler = DataFrameHandler(db_handler, utils)
         self.uploaded_json = None
+        self.data_source_title = "Default Log"
         self.utils = utils
         self.define_layout()
         self.create_callbacks()
@@ -34,7 +35,11 @@ class DashPageLayouts:
         ])
 
     def graphs_layout(self):
+        self.utils.logger.debug("Uploaded logs are: " + str(self.df_handler.filters_data['uploaded-logs']))
+        self.data_source_title = "Default Log" if self.df_handler.selected_log_path == ONSHAPE_LOGS_PATH \
+            else "Selected Uploaded Log"
         return self._create_layout("Interactive Graphs", [
+            html.H4(f"Current Data Source - {self.data_source_title}", className="mb-4"),
             self._create_card("Filters", self._create_filters(), 12),
             self._create_card("Activity Over Time", dcc.Graph(figure=self._create_line_chart(self.df_handler.activity_over_time, 'Date', 'ActivityCount', 'Activity Over Time')), 12),
             self._create_card("Document Usage Frequency", dcc.Graph(figure=self._create_bar_chart(self.df_handler.document_usage, 'Document', 'UsageCount', 'Document Usage Frequency')), 6),
@@ -144,15 +149,22 @@ class DashPageLayouts:
         return dbc.Col(dbc.Card([
             dbc.CardHeader(title),
             dbc.CardBody([content])
-        ]), width=width, className="mb-3")
+        ]), width=width, className="mb-3 mt-3")
 
     def _create_filters(self) -> html.Div:
+        # If the selected log path is not uploaded logs, then the default value for the logs dropdown should be empty
+        # Otherwise, it should be the first uploaded log
+        default_log_value = ""
+        if self.df_handler.filters_data['uploaded-logs']:
+            default_log_value = self.df_handler.filters_data['uploaded-logs'][
+                0] if self.df_handler.selected_log_path == UPLOADED_LOGS_PATH else ""
+
         return html.Div([
             dbc.Row([
                 dbc.Col(dcc.Dropdown(id='document-dropdown', options=self.df_handler.filters_data['documents'], placeholder='Select Document'), width=4),
                 dbc.Col(dcc.Dropdown(id='user-dropdown', options=self.df_handler.filters_data['users'], placeholder='Select User'), width=4),
                 dbc.Col(dcc.Dropdown(id='description-dropdown', options=self.df_handler.filters_data['descriptions'], placeholder='Select Description'), width=4),
-                dbc.Col(dcc.Dropdown(id='logs-dropdown', options=self.df_handler.filters_data['uploaded-logs'], placeholder='Select Log'), width=4)
+                dbc.Col(dcc.Dropdown(id='logs-dropdown', options=self.df_handler.filters_data['uploaded-logs'], placeholder='Select Log', value=default_log_value), width=4)
             ], className="mb-3"),
             dbc.Row([
                 dbc.Col(dcc.DatePickerRange(id='date-picker-range', start_date=datetime.strptime(START_DATE, '%d-%m-%Y').date(), end_date=datetime.strptime(END_DATE, '%d-%m-%Y').date(), display_format='DD-MM-YYYY'), width=12)
@@ -161,12 +173,14 @@ class DashPageLayouts:
         ])
 
     def _create_alerts_list(self) -> html.Ul:
+        if self.df_handler.alerts_df.shape[0] == 0:
+            return html.P("No alerts to display", style={"color": "grey"})
         return html.Ul([
             html.Li(
                 f"{row['Time']} - {row['User']} - {row['Description']} - {row['Document']}",
                 style={"color": "grey" if row['Status'] == "read" else "black",
                        "fontWeight": "bold" if row['Status'] == "unread" else "normal"}
-            ) for index, row in self.df_handler.alerts_df.iterrows()
+            ) for index, row in self.df_handler.alerts_df.iterrows() if self.df_handler.alerts_df.shape[0] > 0
         ], className="list-unstyled")
 
     def _create_nav_link(self, icon_class: str, text: str, href: str, badge_text: str = "", badge_color: str = "") -> dbc.NavLink:
@@ -177,24 +191,26 @@ class DashPageLayouts:
 
 
     def _validate_graph_data(self, df, x, y):
+        if not isinstance(df, pd.DataFrame):  # if df is [] list then return empty df
+            return pd.DataFrame({x: [], y: []}), x, y
         if x is None or y is None:
             return pd.DataFrame({x: [], y: []}), x, y
         return df, x, y
 
     def _create_line_chart(self, df: pd.DataFrame, x: str, y: str, title: str) -> px.line:
         df, x, y = self._validate_graph_data(df, x, y)
-        if df.empty:
+        if len(df) == 0:
             return px.line(title=title)
         return px.line(df, x=x, y=y, title=title)
 
     def _create_bar_chart(self, df: pd.DataFrame, x: str, y: str, title: str) -> px.bar:
         df, x, y = self._validate_graph_data(df, x, y)
-        if df.empty:
+        if len(df) == 0:
             return px.bar(title=title)
         return px.bar(df, x=x, y=y, title=title)
 
     def _create_pie_chart(self, df: pd.DataFrame, names: str, values: str, title: str) -> px.pie:
-        if names is None or values is None:
+        if names is None or values is None or len(df) == 0:
             return px.pie(title=title)
         return px.pie(df, names=names, values=values, title=title)
 
@@ -220,6 +236,11 @@ class DashPageLayouts:
                 accept='.json'   # Accept only JSON files
             ),
             html.Div(id='output-json-upload', style={'margin': '10px 0'}),
+            dbc.Checkbox(
+                id='default-data-source',
+                className="mb-3",
+                label="Default data source"
+            ),
             dbc.Button("Submit", id='submit-button', color="primary", className="w-100", disabled=True),
             html.Div(id='submit-status', style={'margin': '10px 0'})
         ])

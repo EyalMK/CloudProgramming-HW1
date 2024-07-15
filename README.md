@@ -31,15 +31,17 @@ ShapeFlow Monitor is a cloud-based web application designed for analyzing and vi
 - Firebase database setup with appropriate credentials.
 
 ### Installation
+
 #### Using Google Colab
-1. **Open main.ipynb as a notebook in Google Colab**
-2. **Run the notebook**: Click on the "Run" button to execute the cells.
+
+1. Open **main.ipynb** as a notebook in Google Colab
+2. Run the notebook: Click on the "Run" button to execute the cells.
 
 #### Local Installation
 
 1. **Clone the repository**:
     ```sh
-    git clone https://github.com/yourusername/shapeflow-monitor.git
+    git clone https://github.com/EyalMK/ShapeFlow-Monitor-Cloud.git
     cd shapeflow-monitor
     ```
 
@@ -98,6 +100,8 @@ ShapeFlow-Monitor/
 ├── utils/
 │   ├── __init__.py
 │   └── utilities.py             # Utility functions
+│   └── firebase_curator.sh      # Script to wipe all data in Firebase
+│   └── teamA.json               # Default json data - Provided by course instructors.
 ├── main.py                      # Entry point of the application
 ├── README.md                    # Project documentation
 ├── setup.py                     # Project setup script

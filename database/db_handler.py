@@ -1,9 +1,12 @@
 # Database Handler
+import json
 import logging
 from firebase import firebase
 
+from config.constants import ONSHAPE_LOGS_PATH
 
-class DatabaseHandler():
+
+class DatabaseHandler:
     def __init__(self):
         self.db = None
         self.logger = None
@@ -23,7 +26,8 @@ class DatabaseHandler():
         try:
             data = self.db.get(collection_name, None)
             if data is None:
-                self.logger.warning("No data found in the database.")
+                self.logger.warning(f"No data found in the collection {collection_name}.")
+                return data
             return data
         except Exception as e:
             self.logger.error(f"Error reading from database: {e}")
@@ -31,6 +35,12 @@ class DatabaseHandler():
 
     def write_to_database(self, collection_name: str, data: dict):
         try:
+            # Clear the collection if it's the default collection
+            # This is to prevent the database from storing duplicate defaults
+            if collection_name == ONSHAPE_LOGS_PATH:
+                self.db.delete(collection_name, None)
+                self.logger.info(f"{collection_name} cleared successfully. Setting new default log...")
+
             self.db.post(collection_name, data)
             self.logger.info(f"Data written to {collection_name} successfully.")
         except Exception as e:
