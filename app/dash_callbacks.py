@@ -99,7 +99,7 @@ class DashCallbacks:
              State('default-data-source', 'value')],
             prevent_initial_call=True
         )
-        def handle_submit(n_clicks, contents, default_data_source):
+        def handle_submit_upload(n_clicks, contents, default_data_source):
             if n_clicks is not None and contents is not None:
                 try:
                     content_type, content_string = contents.split(',')
@@ -121,18 +121,29 @@ class DashCallbacks:
 
             return "No data to submit."
 
+        # Callback to Search onShape Glossary
+        @self.dash_app.callback(
+            Output("output", "children"),
+            [Input('search-button', 'n_clicks')],
+            [State("input", "value")]
+        )
+        def search_term_in_glossary(n_clicks, value):
+            if n_clicks > 0 and value:
+                return f"{value} is a term in the glossary."
+            return "Enter a search term and click the search button."
+
         # Callbacks for dynamic content
-        @self.dash_app.callback(Output("page-content", "children"),
-                      [Input("url", "pathname")])
+        @self.dash_app.callback(
+            Output("page-content", "children"),
+            [Input("url", "pathname")]
+        )
         def display_page(pathname: str):
             if pathname == "/graphs":
                 return self.page_layouts.graphs_layout()
             elif pathname == "/alerts":
                 return self.page_layouts.alerts_layout()
-            elif pathname == "/activity-log":
-                return self.page_layouts.activity_log_layout()
-            elif pathname == "/settings":
-                return self.page_layouts.settings_layout()
+            elif pathname == "/search-glossary":
+                return self.page_layouts.search_glossary_layout()
             elif pathname == "/upload-log":
                 return self.page_layouts.upload_log_layout()
             else:

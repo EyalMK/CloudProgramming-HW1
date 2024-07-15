@@ -52,11 +52,34 @@ class DashPageLayouts:
             self._create_card("Acknowledge All", dbc.Button("Acknowledge All", color="success", className="w-100"), 12)
         ])
 
-    def activity_log_layout(self):
-        return self._create_layout("Activity Log", [html.Div("Activity Log Content")])
+    def search_glossary_layout(self):
+        text_input = html.Div(
+            [
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            dbc.Input(id="input", placeholder="Search...", type="text"),
+                            width=8
+                        ),
+                        dbc.Col(
+                            dbc.Button(children=html.I(className="fas fa-search", style=dict(display="inline-block")),
+                                       id="search-button",
+                                       n_clicks=0, size='lg',
+                                       style=dict(fontSize='1.7vh', backgroundColor="#007BC4", textAlign="center")),
+                            width=4
+                        )
+                    ],
+                    align="center"
+                ),
+                html.Br(),
+                # html.P("Search results:"),
+                html.P(id="output")
+            ]
+        )
 
-    def settings_layout(self):
-        return self._create_layout("Settings", [html.Div("Settings Content")])
+        return self._create_layout("Search OnShape Glossary", [
+            self._create_card("Search", text_input, 5)
+        ])
 
     def upload_log_layout(self):
         return self._create_layout("Upload Log", [
@@ -66,7 +89,7 @@ class DashPageLayouts:
 
     def create_header(self):
         current_date = datetime.now().strftime('%d-%m-%Y')
-        logo_path = "/static/SFM-logo.png"
+        logo_path = "../static/SFM-logo.png"
         return dbc.Navbar(
             dbc.Container([
                 dbc.Row([
@@ -94,10 +117,9 @@ class DashPageLayouts:
                 [
                     self._create_nav_link("fas fa-tachometer-alt", " Dashboard", "/"),
                     self._create_nav_link("fas fa-chart-line", " Graphs", "/graphs"),
+                    self._create_nav_link("fas fa-magnifying-glass", " Search Glossary", "/search-glossary"),
                     self._create_nav_link("fas fa-cloud", " Upload Logs", "/upload-log"),
                     self._create_nav_link("fas fa-bell", " Alerts", "/alerts", "3", "danger"),
-                    self._create_nav_link("fas fa-list", " Activity Log", "/activity-log"),
-                    self._create_nav_link("fas fa-cog", " Settings", "/settings")
                 ],
                 vertical=True,
                 pills=True,

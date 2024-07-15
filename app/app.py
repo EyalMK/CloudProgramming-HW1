@@ -15,7 +15,7 @@ class App:
         self.db_handler = DatabaseHandler()
         self.utils = Utilities(self.db_handler)
         self._initialize_database()
-        self.server = Flask(__name__)
+        self.server = Flask(__name__, static_folder="static")
         self.dash_app = dash.Dash(__name__, server=self.server, external_stylesheets=[dbc.themes.BOOTSTRAP, FONT_AWESOME_CDN])
         self.dash_app.config.suppress_callback_exceptions = True
         self.dash_page_layouts = DashPageLayouts(self.dash_app, self.db_handler, self.utils)
