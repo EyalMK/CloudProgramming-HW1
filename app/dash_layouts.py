@@ -151,7 +151,8 @@ class DashPageLayouts:
             dbc.Row([
                 dbc.Col(dcc.Dropdown(id='document-dropdown', options=self.df_handler.filters_data['documents'], placeholder='Select Document'), width=4),
                 dbc.Col(dcc.Dropdown(id='user-dropdown', options=self.df_handler.filters_data['users'], placeholder='Select User'), width=4),
-                dbc.Col(dcc.Dropdown(id='description-dropdown', options=self.df_handler.filters_data['descriptions'], placeholder='Select Description'), width=4)
+                dbc.Col(dcc.Dropdown(id='description-dropdown', options=self.df_handler.filters_data['descriptions'], placeholder='Select Description'), width=4),
+                dbc.Col(dcc.Dropdown(id='logs-dropdown', options=self.df_handler.filters_data['uploaded-logs'], placeholder='Select Log'), width=4)
             ], className="mb-3"),
             dbc.Row([
                 dbc.Col(dcc.DatePickerRange(id='date-picker-range', start_date=datetime.strptime(START_DATE, '%d-%m-%Y').date(), end_date=datetime.strptime(END_DATE, '%d-%m-%Y').date(), display_format='DD-MM-YYYY'), width=12)
@@ -174,13 +175,27 @@ class DashPageLayouts:
             children.append(dbc.Badge(badge_text, color=badge_color, className="ml-2"))
         return dbc.NavLink(children, href=href, active="exact", className="text-white")
 
+
+    def _validate_graph_data(self, df, x, y):
+        if x is None or y is None:
+            return pd.DataFrame({x: [], y: []}), x, y
+        return df, x, y
+
     def _create_line_chart(self, df: pd.DataFrame, x: str, y: str, title: str) -> px.line:
+        df, x, y = self._validate_graph_data(df, x, y)
+        if df.empty:
+            return px.line(title=title)
         return px.line(df, x=x, y=y, title=title)
 
     def _create_bar_chart(self, df: pd.DataFrame, x: str, y: str, title: str) -> px.bar:
+        df, x, y = self._validate_graph_data(df, x, y)
+        if df.empty:
+            return px.bar(title=title)
         return px.bar(df, x=x, y=y, title=title)
 
     def _create_pie_chart(self, df: pd.DataFrame, names: str, values: str, title: str) -> px.pie:
+        if names is None or values is None:
+            return px.pie(title=title)
         return px.pie(df, names=names, values=values, title=title)
 
     def _create_upload_component(self) -> html.Div:

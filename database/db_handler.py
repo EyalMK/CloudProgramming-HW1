@@ -23,7 +23,7 @@ class DatabaseHandler():
         try:
             data = self.db.get(collection_name, None)
             if data is None:
-                raise Exception("No data found in the database.")
+                self.logger.warning("No data found in the database.")
             return data
         except Exception as e:
             self.logger.error(f"Error reading from database: {e}")

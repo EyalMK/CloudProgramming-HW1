@@ -1,5 +1,5 @@
 ### DataFrames Handler
-from config.constants import ONSHAPE_LOGS_PATH
+from config.constants import ONSHAPE_LOGS_PATH, UPLOADED_LOGS_PATH
 import pandas as pd
 
 
@@ -20,7 +20,8 @@ class DataFrameHandler:
     def initialize_df(self):
         try:
             data = self.db_handler.read_from_database(ONSHAPE_LOGS_PATH)
-            self.df = self.raw_df = pd.DataFrame(data)
+            if data is not None:
+                self.df = self.raw_df = pd.DataFrame(data)
         except Exception as e:
             raise e
 
@@ -39,10 +40,19 @@ class DataFrameHandler:
     def _extract_date_for_grouping(self):
         self.df['Date'] = self.raw_df['Time'].dt.date
 
+    def _populate_uploaded_logs(self):
+        data = self.db_handler.read_from_database(UPLOADED_LOGS_PATH)
+        logs = []
+        if data:
+            for key in data:
+                logs.append(data[key].fileName)  # Append only file names.
+        self.filters_data['uploaded-logs'] = logs
+
     def _populate_filters(self):
         self.filters_data['documents'] = [doc for doc in self.raw_df['Document'].unique()]
         self.filters_data['users'] = [user for user in self.raw_df['User'].unique()]
         self.filters_data['descriptions'] = [desc for desc in self.raw_df['Description'].unique()]
+        self._populate_uploaded_logs()
 
     def _group_activity_over_time(self):
         self.activity_over_time = self.raw_df.groupby('Date').size().reset_index(name='ActivityCount')

@@ -1,8 +1,10 @@
 import base64
 import json
-
+import pandas as pd
 import dash
 from dash.dependencies import Input, Output, State
+
+from config.constants import UPLOADED_LOGS_PATH
 from dataframes.dataframe_handler import DataFrameHandler
 from utils.utilities import Utilities
 
@@ -78,6 +80,7 @@ class DashCallbacks:
 
                 try:
                     json_data = json.loads(decoded)
+                    json_data["fileName"] = filename
                     self.page_layouts.uploaded_json = json_data  # Store JSON data
                     return f"{filename}", False  # Enable submit button
                 except json.JSONDecodeError:
@@ -99,8 +102,8 @@ class DashCallbacks:
                     decoded = base64.b64decode(content_string)
                     size_kb = len(decoded) / 1024  # size in KB
 
-                    self.db_handler.write_to_database("/uploaded-jsons", self.page_layouts.uploaded_json)
-                    self.utils.logger.info(f"Loaded JSON of size: {size_kb:.2f} KB")
+                    self.db_handler.write_to_database(UPLOADED_LOGS_PATH, self.page_layouts.uploaded_json)
+                    self.utils.logger.info(f"Uploaded JSON of size: {size_kb:.2f} KB")
                     return "File has been uploaded successfully."
                 except Exception as e:
                     self.utils.logger.error(f"Error uploading JSON: {str(e)}")

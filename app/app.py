@@ -2,7 +2,7 @@ import os
 import requests
 from app.dash_layouts import DashPageLayouts
 from config.constants import FONT_AWESOME_CDN, RuntimeEnvironments, PORT
-from database.handler import DatabaseHandler
+from database.db_handler import DatabaseHandler
 from utils.utilities import Utilities
 import dash
 import dash_bootstrap_components as dbc

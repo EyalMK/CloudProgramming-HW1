@@ -31,6 +31,11 @@ ShapeFlow Monitor is a cloud-based web application designed for analyzing and vi
 - Firebase database setup with appropriate credentials.
 
 ### Installation
+#### Using Google Colab
+1. **Open main.ipynb as a notebook in Google Colab**
+2. **Run the notebook**: Click on the "Run" button to execute the cells.
+
+#### Local Installation
 
 1. **Clone the repository**:
     ```sh
