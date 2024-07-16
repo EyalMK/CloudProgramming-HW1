@@ -22,7 +22,6 @@ class DataFrameHandler:
         self.db_handler = db_handler
         self.initialize_df()
         self.process_df()
-        self.append_demo_alerts()
 
     def initialize_df(self):
         try:
@@ -42,6 +41,7 @@ class DataFrameHandler:
             self._group_activity_over_time()
             self._group_document_usage()
             self._group_user_activity()
+            self._generate_alerts_df()
 
     def update_with_new_data(self, collection_name):
         try:
@@ -53,6 +53,9 @@ class DataFrameHandler:
                 self.process_df()  # Reprocess the DataFrame
         except Exception as e:
             self.utils.logger.error(f"Error updating with new data: {str(e)}")
+
+    def get_unread_alerts_count(self):
+        return self.alerts_df[self.alerts_df['Status'] == 'unread'].shape[0]
 
     def _dataframes_from_data(self, data, collection_source=ONSHAPE_LOGS_PATH):
         self.selected_log_path = collection_source
@@ -92,33 +95,57 @@ class DataFrameHandler:
         self.user_activity = self.raw_df['User'].value_counts().reset_index(name='ActivityCount')
         self.user_activity.columns = ['User', 'ActivityCount']
 
-    def append_demo_alerts(self):
-        if self.df is not None:
-            # Create demo logs for bugs
-            demo_bug_logs = pd.DataFrame([
-                {'Time': pd.Timestamp('2024-07-01 10:00:00'), 'User': 'user1',
-                 'Description': 'Detected a bug in feature X', 'Document': 'doc1'},
-                {'Time': pd.Timestamp('2024-07-01 11:00:00'), 'User': 'user2', 'Description': 'Bug found in module Y',
-                 'Document': 'doc2'},
-                {'Time': pd.Timestamp('2024-07-01 12:00:00'), 'User': 'user3',
-                 'Description': 'Critical bug in processing unit', 'Document': 'doc3'},
-                {'Time': pd.Timestamp('2024-07-01 13:00:00'), 'User': 'user4', 'Description': 'Minor bug in UI',
-                 'Document': 'doc4'},
-                {'Time': pd.Timestamp('2024-07-01 14:00:00'), 'User': 'user5',
-                 'Description': 'Bug affecting performance', 'Document': 'doc5'}
-            ])
+    def _undo_redo_activity_detection(self):
+        # Filter redo and undo actions
+        redo_undo_df = self.raw_df[self.raw_df['Description'].str.contains('Undo|Redo', case=False)]
 
-            # Append demo bug logs to the existing DataFrame
-            self.df = pd.concat([self.df, demo_bug_logs], ignore_index=True)
+        # Set a time window (e.g., 1 hour) for detecting high frequency of actions
+        time_window = '1h'
+        redo_undo_df['TimeWindow'] = redo_undo_df['Time'].dt.floor(time_window)
+        grouped = redo_undo_df.groupby(['User', 'Document', 'TimeWindow']).size().reset_index(name='Count')
 
-            # Create a sample alerts DataFrame
-            self.alerts_df = self.df[(self.df['Description'].str.contains("bug", case=False)) |
-                                     (self.df['Description'].str.contains("undo", case=False))]
+        # Filter the groups that exceed the threshold
+        alerts = grouped[grouped['Count'] > 15]
 
-            self.alerts_df = self.alerts_df[['Time', 'User', 'Description', 'Document']].sort_values(by='Time',
-                                                                                                     ascending=False).head(
-                5)
-            self.alerts_df['Time'] = self.alerts_df['Time'].dt.strftime('%Y-%m-%d %H:%M:%S')
+        # Prepare the alerts DataFrame
+        if not alerts.empty:
+            alerts['Time'] = alerts['TimeWindow'].dt.strftime('%H:%M:%S %d-%m-%Y')
+            alerts['Description'] = 'Many redos/undos detected within a short time period'
+            alerts['Status'] = 'unread'
+            self.alerts_df = alerts[['Time', 'User', 'Description', 'Document', 'Status']]
+        else:
+            self.alerts_df = pd.DataFrame(columns=['Time', 'User', 'Description', 'Document', 'Status'])
 
-            # Mark the first two as read and the rest as unread
-            self.alerts_df['Status'] = ['read', 'read'] + ['unread'] * (len(self.alerts_df) - 2)
+    def _generate_alerts_df(self):
+        self._undo_redo_activity_detection()
+
+    # def append_demo_alerts(self):
+    #     if self.df is not None:
+    #         # Create demo logs for bugs
+    #         demo_bug_logs = pd.DataFrame([
+    #             {'Time': pd.Timestamp('2024-07-01 10:00:00'), 'User': 'user1',
+    #              'Description': 'Detected a bug in feature X', 'Document': 'doc1'},
+    #             {'Time': pd.Timestamp('2024-07-01 11:00:00'), 'User': 'user2', 'Description': 'Bug found in module Y',
+    #              'Document': 'doc2'},
+    #             {'Time': pd.Timestamp('2024-07-01 12:00:00'), 'User': 'user3',
+    #              'Description': 'Critical bug in processing unit', 'Document': 'doc3'},
+    #             {'Time': pd.Timestamp('2024-07-01 13:00:00'), 'User': 'user4', 'Description': 'Minor bug in UI',
+    #              'Document': 'doc4'},
+    #             {'Time': pd.Timestamp('2024-07-01 14:00:00'), 'User': 'user5',
+    #              'Description': 'Bug affecting performance', 'Document': 'doc5'}
+    #         ])
+    #
+    #         # Append demo bug logs to the existing DataFrame
+    #         self.df = pd.concat([self.df, demo_bug_logs], ignore_index=True)
+    #
+    #         # Create a sample alerts DataFrame
+    #         self.alerts_df = self.df[(self.df['Description'].str.contains("bug", case=False)) |
+    #                                  (self.df['Description'].str.contains("undo", case=False))]
+    #
+    #         self.alerts_df = self.alerts_df[['Time', 'User', 'Description', 'Document']].sort_values(by='Time',
+    #                                                                                                  ascending=False).head(
+    #             5)
+    #         self.alerts_df['Time'] = self.alerts_df['Time'].dt.strftime('%Y-%m-%d %H:%M:%S')
+    #
+    #         # Mark the first two as read and the rest as unread
+    #         self.alerts_df['Status'] = ['read', 'read'] + ['unread'] * (len(self.alerts_df) - 2)

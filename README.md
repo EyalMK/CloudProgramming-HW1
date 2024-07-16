@@ -101,7 +101,8 @@ ShapeFlow-Monitor/
 │   ├── __init__.py
 │   └── utilities.py             # Utility functions
 │   └── firebase_curator.sh      # Script to wipe all data in Firebase
-│   └── teamA.json               # Default json data - Provided by course instructors.
+│   └── default_source.json      # Default json data - Provided by course instructors.
+│   └── teamA.json               # Modified json data based on the previously stated default json file.
 ├── main.py                      # Entry point of the application
 ├── README.md                    # Project documentation
 ├── setup.py                     # Project setup script

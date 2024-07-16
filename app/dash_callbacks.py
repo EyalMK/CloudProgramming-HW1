@@ -138,6 +138,17 @@ class DashCallbacks:
                     return f"{value} is not a term in the glossary."
             return "Enter a search term and click the search button."
 
+        # Callback to acknowledge all alerts
+        @self.dash_app.callback(
+            Output('alerts-list', 'children'),
+            Input('acknowledge-all-button', 'n_clicks')
+        )
+        def acknowledge_all_alerts(n_clicks):
+            if n_clicks is not None:
+                for _, row in self.df_handler.alerts_df.iterrows():
+                    row['Status'] = 'read'
+            return self.page_layouts.create_alerts_list()
+
         # Callbacks for dynamic content
         @self.dash_app.callback(
             Output("page-content", "children"),
