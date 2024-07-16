@@ -4,8 +4,9 @@ import pandas as pd
 import dash
 from dash.dependencies import Input, Output, State
 
-from config.constants import UPLOADED_LOGS_PATH, ONSHAPE_LOGS_PATH
+from config.constants import DatabaseCollections
 from dataframes.dataframe_handler import DataFrameHandler
+from search_engine.search_engine import SearchEngine
 from utils.utilities import Utilities
 
 
@@ -16,6 +17,7 @@ class DashCallbacks:
         self.db_handler = db_handler
         self.page_layouts = page_layouts
         self.utils = utils
+        self.search_engine = SearchEngine(db_handler, utils)
         self.register_callbacks()
 
     def register_callbacks(self):
@@ -106,7 +108,7 @@ class DashCallbacks:
                     decoded = base64.b64decode(content_string)
                     size_kb = len(decoded) / 1024  # size in KB
 
-                    collection_name = ONSHAPE_LOGS_PATH if default_data_source else UPLOADED_LOGS_PATH
+                    collection_name = DatabaseCollections.onshape_logs.value if default_data_source else DatabaseCollections.uploaded_logs.value
 
                     self.db_handler.write_to_database(collection_name, self.page_layouts.uploaded_json)
                     self.utils.logger.info(f"Uploaded JSON of size: {size_kb:.2f} KB")
@@ -129,7 +131,11 @@ class DashCallbacks:
         )
         def search_term_in_glossary(n_clicks, value):
             if n_clicks > 0 and value:
-                return f"{value} is a term in the glossary."
+                results = self.search_engine.perform_search(value)
+                if results:
+                    return f"{value} is found in the glossary.\n Found {results} occurrences.\n"
+                else:
+                    return f"{value} is not a term in the glossary."
             return "Enter a search term and click the search button."
 
         # Callbacks for dynamic content

@@ -1,6 +1,8 @@
 # Database Handler
 import json
 import logging
+from typing import Any
+
 from firebase import firebase
 
 from config.constants import ONSHAPE_LOGS_PATH
@@ -22,7 +24,7 @@ class DatabaseHandler:
     def set_logger(self, logger: logging.Logger):
         self.logger = logger
 
-    def read_from_database(self, collection_name: str) -> dict:
+    def read_from_database(self, collection_name: str) -> Any | None:
         try:
             data = self.db.get(collection_name, None)
             if data is None:

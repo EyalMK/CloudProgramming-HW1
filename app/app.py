@@ -11,16 +11,19 @@ from pyngrok import ngrok
 
 class App:
     def __init__(self, db_conn_url):
-        self.db_uri = db_conn_url
-        self.db_handler = DatabaseHandler()
-        self.utils = Utilities(self.db_handler)
-        self._initialize_database()
-        self.server = Flask(__name__, static_folder="static")
-        self.dash_app = dash.Dash(__name__, server=self.server, external_stylesheets=[dbc.themes.BOOTSTRAP, FONT_AWESOME_CDN])
-        self.dash_app.config.suppress_callback_exceptions = True
-        self.dash_page_layouts = DashPageLayouts(self.dash_app, self.db_handler, self.utils)
-        self._initialize_server()
-        self._setup_routes()
+        try:
+            self.db_uri = db_conn_url
+            self.db_handler = DatabaseHandler()
+            self.utils = Utilities(self.db_handler)
+            self._initialize_database()
+            self.server = Flask(__name__, static_folder="static")
+            self.dash_app = dash.Dash(__name__, server=self.server, external_stylesheets=[dbc.themes.BOOTSTRAP, FONT_AWESOME_CDN])
+            self.dash_app.config.suppress_callback_exceptions = True
+            self.dash_page_layouts = DashPageLayouts(self.dash_app, self.db_handler, self.utils)
+            self._initialize_server()
+            self._setup_routes()
+        except Exception as e:
+            self.utils.logger.error(f"Error initializing the app: {str(e)}")
 
     def _initialize_database(self):
         self.db_handler.set_logger(self.utils.logger)
