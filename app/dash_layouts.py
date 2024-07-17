@@ -146,9 +146,7 @@ class DashPageLayouts:
             dbc.Container([
                 dbc.Row([
                     dbc.Col(html.P(f"© 2024 {PROJECT_NAME}, Inc.", className="text-white text-center mb-0"),
-                            width="auto"),
-                    dbc.Col(html.P("Privacy Policy", className="text-white text-center mb-0"), width="auto"),
-                    dbc.Col(html.P("Terms of Service", className="text-white text-center mb-0"), width="auto")
+                            width="auto")
                 ], align="center", justify="center", className="w-100")
             ]),
             color="primary",
