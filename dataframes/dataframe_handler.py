@@ -1,4 +1,6 @@
 ### DataFrames Handler
+import os
+
 from config.constants import ONSHAPE_LOGS_PATH, UPLOADED_LOGS_PATH
 import pandas as pd
 
@@ -99,13 +101,12 @@ class DataFrameHandler:
         # Filter redo and undo actions
         redo_undo_df = self.raw_df[self.raw_df['Description'].str.contains('Undo|Redo', case=False)]
 
-        # Set a time window (e.g., 1 hour) for detecting high frequency of actions
-        time_window = '1h'
-        redo_undo_df['TimeWindow'] = redo_undo_df['Time'].dt.floor(time_window)
+        # Set a time window for detecting high frequency of actions
+        redo_undo_df['TimeWindow'] = redo_undo_df['Time'].dt.floor(os.environ["ALERT_TIMEWINDOW"])
         grouped = redo_undo_df.groupby(['User', 'Document', 'TimeWindow']).size().reset_index(name='Count')
 
         # Filter the groups that exceed the threshold
-        alerts = grouped[grouped['Count'] > 15]
+        alerts = grouped[grouped['Count'] > int(os.environ["UNDO_REDO_THRESHOLD"])]
 
         # Prepare the alerts DataFrame
         if not alerts.empty:
@@ -118,34 +119,3 @@ class DataFrameHandler:
 
     def _generate_alerts_df(self):
         self._undo_redo_activity_detection()
-
-    # def append_demo_alerts(self):
-    #     if self.df is not None:
-    #         # Create demo logs for bugs
-    #         demo_bug_logs = pd.DataFrame([
-    #             {'Time': pd.Timestamp('2024-07-01 10:00:00'), 'User': 'user1',
-    #              'Description': 'Detected a bug in feature X', 'Document': 'doc1'},
-    #             {'Time': pd.Timestamp('2024-07-01 11:00:00'), 'User': 'user2', 'Description': 'Bug found in module Y',
-    #              'Document': 'doc2'},
-    #             {'Time': pd.Timestamp('2024-07-01 12:00:00'), 'User': 'user3',
-    #              'Description': 'Critical bug in processing unit', 'Document': 'doc3'},
-    #             {'Time': pd.Timestamp('2024-07-01 13:00:00'), 'User': 'user4', 'Description': 'Minor bug in UI',
-    #              'Document': 'doc4'},
-    #             {'Time': pd.Timestamp('2024-07-01 14:00:00'), 'User': 'user5',
-    #              'Description': 'Bug affecting performance', 'Document': 'doc5'}
-    #         ])
-    #
-    #         # Append demo bug logs to the existing DataFrame
-    #         self.df = pd.concat([self.df, demo_bug_logs], ignore_index=True)
-    #
-    #         # Create a sample alerts DataFrame
-    #         self.alerts_df = self.df[(self.df['Description'].str.contains("bug", case=False)) |
-    #                                  (self.df['Description'].str.contains("undo", case=False))]
-    #
-    #         self.alerts_df = self.alerts_df[['Time', 'User', 'Description', 'Document']].sort_values(by='Time',
-    #                                                                                                  ascending=False).head(
-    #             5)
-    #         self.alerts_df['Time'] = self.alerts_df['Time'].dt.strftime('%Y-%m-%d %H:%M:%S')
-    #
-    #         # Mark the first two as read and the rest as unread
-    #         self.alerts_df['Status'] = ['read', 'read'] + ['unread'] * (len(self.alerts_df) - 2)

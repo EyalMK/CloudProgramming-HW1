@@ -140,14 +140,16 @@ class DashCallbacks:
 
         # Callback to acknowledge all alerts
         @self.dash_app.callback(
-            Output('alerts-list', 'children'),
-            Input('acknowledge-all-button', 'n_clicks')
+            [Output('alerts-list', 'children'),
+             Output('alerts-count-badge', 'children')],
+            [Input('acknowledge-all-button', 'n_clicks')]
         )
         def acknowledge_all_alerts(n_clicks):
             if n_clicks is not None:
-                for _, row in self.df_handler.alerts_df.iterrows():
-                    row['Status'] = 'read'
-            return self.page_layouts.create_alerts_list()
+                self.df_handler.alerts_df['Status'] = 'read'
+                unread_alerts_count = str(self.df_handler.get_unread_alerts_count())
+                return self.page_layouts.create_alerts_list(), unread_alerts_count
+            return dash.no_update, dash.no_update
 
         # Callbacks for dynamic content
         @self.dash_app.callback(

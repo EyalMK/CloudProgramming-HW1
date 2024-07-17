@@ -57,5 +57,5 @@ class App:
 
     def run(self):
         debug = os.environ["RUNTIME_ENVIRONMENT"] in [RuntimeEnvironments.dev.value, RuntimeEnvironments.test.value]
-        self.dash_app.run_server(debug=debug, use_reloader=True, port=PORT)
+        self.dash_app.run_server(debug=debug, use_reloader=False, port=PORT)
         self.utils.logger.info("=============== ShapeFlow Monitor is Running ===============")

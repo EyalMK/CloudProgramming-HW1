@@ -100,7 +100,7 @@ class DashPageLayouts:
 
     def create_header(self):
         current_date = datetime.now().strftime('%d-%m-%Y')
-        logo_path = "../static/SFM-logo.png"
+        logo_path = "/static/SFM-logo.png"
         return dbc.Navbar(
             dbc.Container([
                 dbc.Row([
@@ -113,8 +113,7 @@ class DashPageLayouts:
                             style={"fontSize": "1.2rem", "color": "lightgrey"}
                         ),
                         width="auto"
-                    ),
-                    dbc.Col(dbc.NavItem(dbc.NavLink("User Icon", href="#", className="text-white")), width="auto")
+                    )
                 ], align="center", justify="start"),
             ], fluid=True),
             color="primary",
@@ -123,6 +122,7 @@ class DashPageLayouts:
         )
 
     def create_side_menu(self):
+        alert_count = str(self.df_handler.get_unread_alerts_count())
         return dbc.Col([
             dbc.Nav(
                 [
@@ -131,8 +131,8 @@ class DashPageLayouts:
                     self._create_nav_link("fas fa-magnifying-glass", " Search Glossary", "/search-glossary"),
                     self._create_nav_link("fas fa-cloud", " Upload Logs", "/upload-log"),
                     self._create_nav_link("fas fa-bell", " Alerts", "/alerts",
-                                          str(self.df_handler.get_unread_alerts_count()),
-                                          "danger"),
+                                          alert_count,
+                                          "danger", "alerts-count-badge"),
                 ],
                 vertical=True,
                 pills=True,
@@ -223,14 +223,14 @@ class DashPageLayouts:
                 f"{row['Time']} - {row['Description']} by User: {row['User']} in Document: {row['Document']}",
                 style={"color": "grey" if row['Status'] == "read" else "black",
                        "fontWeight": "bold" if row['Status'] == "unread" else "normal"}
-            ) for index, row in self.df_handler.alerts_df.iterrows() if self.df_handler.alerts_df.shape[0] > 0
+            ) for _, row in self.df_handler.alerts_df.iterrows() if self.df_handler.alerts_df.shape[0] > 0
         ], id='alerts-list', className="list-unstyled")
 
     def _create_nav_link(self, icon_class: str, text: str, href: str, badge_text: str = "",
-                         badge_color: str = "") -> dbc.NavLink:
+                         badge_color: str = "", badge_id: str = "") -> dbc.NavLink:
         children = [html.I(className=icon_class), html.Span(text, className="ml-4")]
         if badge_text:
-            children.append(dbc.Badge(badge_text, color=badge_color, className="ml-2"))
+            children.append(dbc.Badge(badge_text, color=badge_color, className="ml-2", id=badge_id))
         return dbc.NavLink(children, href=href, active="exact", className="text-white gap-6")
 
     def _validate_graph_data(self, df, x, y):

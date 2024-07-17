@@ -28,4 +28,8 @@ ONSHAPE_LOGS_PATH = DatabaseCollections.onshape_logs.value
 UPLOADED_LOGS_PATH = DatabaseCollections.uploaded_logs.value
 GLOSSARY_WORDS_PATH = DatabaseCollections.glossary_words.value
 
+# Todo: refactor and import from .env.development/.env.testing
+os.environ["NGROK_TOKEN"] = "2jBnTrvBD8DEzmYA1Bxx69uBXHH_84Fgk6CD5LHc9Cos4DdGh"
+os.environ["ALERT_TIMEWINDOW"] = "1h"
+os.environ["UNDO_REDO_THRESHOLD"] = "15"
 runtime_environment = os.environ["RUNTIME_ENVIRONMENT"] = RuntimeEnvironments.dev.value
