@@ -41,7 +41,6 @@ class DashPageLayouts:
         ])
 
     def graphs_layout(self):
-        self.utils.logger.debug("Uploaded logs are: " + str(self.df_handler.filters_data['uploaded-logs']))
         self.data_source_title = "Default Log" if self.df_handler.selected_log_path == ONSHAPE_LOGS_PATH \
             else "Selected Uploaded Log"
         return self._create_layout("Interactive Graphs", [
@@ -59,9 +58,11 @@ class DashPageLayouts:
         ])
 
     def alerts_layout(self):
+        alerts_list, unread_alerts_count = self.create_alerts_list()
         return self._create_layout("Real-time Alerts", [
-            self._create_card("Recent Alerts", self.create_alerts_list(), 12),
-            self._create_card("Acknowledge All", dbc.Button("Acknowledge All", color="success", className="w-100", id="acknowledge-all-button"), 12)
+            self._create_card("Recent Alerts", html.Div(id='alerts-list', children=alerts_list), 12),
+            self._create_card("Acknowledge All", dbc.Button("Acknowledge All", color="success", className="w-100",
+                                                            id="acknowledge-all-button"), 12),
         ])
 
     def search_glossary_layout(self):
@@ -213,16 +214,20 @@ class DashPageLayouts:
             dbc.Button("Apply Filters", id='apply-filters', color="primary", className="w-100")
         ])
 
-    def create_alerts_list(self) -> html:
+    def create_alerts_list(self) -> tuple:
         if self.df_handler.alerts_df.shape[0] == 0:
-            return html.P("No alerts to display", style={"color": "grey"})
-        return html.Ul([
-            html.Li(
-                f"{row['Time']} - {row['Description']} by User: {row['User']} in Document: {row['Document']}",
-                style={"color": "grey" if row['Status'] == "read" else "black",
-                       "fontWeight": "bold" if row['Status'] == "unread" else "normal"}
-            ) for _, row in self.df_handler.alerts_df.iterrows() if self.df_handler.alerts_df.shape[0] > 0
-        ], id='alerts-list', className="list-unstyled")
+            alerts_list = html.P("No alerts to display", style={"color": "grey"})
+        else:
+            alerts_list = html.Ul([
+                html.Li(
+                    f"{row['Time']} - {row['Description']} by User: {row['User']} in Document: {row['Document']}",
+                    style={"color": "grey" if row['Status'] == "read" else "black",
+                           "fontWeight": "bold" if row['Status'] == "unread" else "normal"}
+                ) for _, row in self.df_handler.alerts_df.iterrows()
+            ], id='alerts-list', className="list-unstyled")
+
+        unread_alerts_count = self.df_handler.get_unread_alerts_count()
+        return alerts_list, str(unread_alerts_count)
 
     def _create_nav_link(self, icon_class: str, text: str, href: str, badge_text: str = "",
                          badge_color: str = "", badge_id: str = "") -> dbc.NavLink:

@@ -5,7 +5,7 @@ from typing import Any
 
 from firebase import firebase
 
-from config.constants import ONSHAPE_LOGS_PATH
+from config.constants import ONSHAPE_LOGS_PATH, GLOSSARY_WORDS_PATH
 
 
 class DatabaseHandler:

@@ -19,12 +19,25 @@ class SearchEngine:
         self._search_engine()
 
     def perform_search(self, query):
-        # Cache search results to avoid re-indexing the glossary
+        # Cache search results to avoid re-indexing the query
+        # Todo: For HW3, store results in database instead
         if query in self.indices:
             return self.indices[query]
 
-        results = self._search_indices(query, self.stemmed_indices)
-        return results
+        words = query.split()
+        combined_results = {}
+
+        # Search for each word
+        for word in words:
+            results = self._search_indices(word, self.stemmed_indices)
+            self.utils.logger.debug(f"Word: {word}, results: {results}")
+            # Aggregation
+            for key, val in results.items():
+                if key in combined_results:
+                    combined_results[key] += val
+                else:
+                    combined_results[key] = val
+        return combined_results
 
     def _initialize_base_words(self):
         try:

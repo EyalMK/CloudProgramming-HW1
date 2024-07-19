@@ -48,8 +48,9 @@ class DataFrameHandler:
     def update_with_new_data(self, collection_name):
         try:
             data = self.db_handler.read_from_database(collection_name)
+            self._populate_uploaded_logs(data=data)
             # Only update with new data if it is set to default or if there is no data processed yet
-            if data is not None and (collection_name == ONSHAPE_LOGS_PATH or self.raw_df is None):
+            if data and (collection_name == ONSHAPE_LOGS_PATH or self.raw_df is None):
                 # Process the newly uploaded data
                 self._dataframes_from_data(data, collection_source=collection_name)
                 self.process_df()  # Reprocess the DataFrame
@@ -57,6 +58,8 @@ class DataFrameHandler:
             self.utils.logger.error(f"Error updating with new data: {str(e)}")
 
     def get_unread_alerts_count(self):
+        if self.alerts_df.empty:
+            return 0
         return self.alerts_df[self.alerts_df['Status'] == 'unread'].shape[0]
 
     def _dataframes_from_data(self, data, collection_source=ONSHAPE_LOGS_PATH):
@@ -70,8 +73,9 @@ class DataFrameHandler:
     def _extract_date_for_grouping(self):
         self.df['Date'] = self.raw_df['Time'].dt.date
 
-    def _populate_uploaded_logs(self):
-        data = self.db_handler.read_from_database(UPLOADED_LOGS_PATH)
+    def _populate_uploaded_logs(self, data=None):
+        if data is None:
+            data = self.db_handler.read_from_database(UPLOADED_LOGS_PATH)
         logs = []
         if data:
             for key in data:

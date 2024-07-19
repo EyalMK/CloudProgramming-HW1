@@ -23,3 +23,8 @@ class Utilities:
         firebase_handler = DatabaseLogger(db_handler=self.db)
         firebase_handler.setFormatter(console_formatter)
         self.logger.addHandler(firebase_handler)
+
+        # DB Log Handler
+        console_logger = logging.StreamHandler()
+        console_logger.setFormatter(console_formatter)
+        self.logger.addHandler(console_logger)
