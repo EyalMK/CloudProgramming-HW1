@@ -39,9 +39,9 @@ class App:
         def index():
             return self.dash_app.index()
 
-        @self.server.route('/static/<path:path>')
-        def serve_static(path):
-            return send_from_directory('static', path)
+        @self.server.route('/static/<path:filename>')
+        def static_files(filename):
+            return send_from_directory(self.server.static_folder, filename)
 
     def _get_ngrok_tunnel(self):
         api_url = "http://localhost:4040/api/tunnels"

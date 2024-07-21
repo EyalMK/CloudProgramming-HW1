@@ -133,11 +133,10 @@ class DashCallbacks:
             if n_clicks > 0 and value:
                 results = self.search_engine.perform_search(value)
                 if results:
-                    results_to_print = ""
-                    print(f"Results: {results}")
                     if isinstance(results, int):
                         return f"{value} is found {results} times."
 
+                    results_to_print = ""
                     for key, val in results.items():
                         results_to_print += f" {key} is found {val} times.\n\n"
                     return results_to_print
