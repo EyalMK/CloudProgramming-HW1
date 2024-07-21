@@ -133,33 +133,10 @@ class DashCallbacks:
             if n_clicks > 0 and value:
                 results = self.search_engine.perform_search(value)
                 if results:
-                    if isinstance(results, int):
-                        return f"{value} is found {results} times."
-
-                    results_to_print = ""
-                    for key, val in results.items():
-                        results_to_print += f" {key} is found {val} times.\n\n"
-                    return results_to_print
+                    return f"{value} is found in the glossary.\n Found {results} occurrences.\n"
                 else:
                     return f"{value} is not a term in the glossary."
             return "Enter a search term and click the search button."
-
-        # Callback to acknowledge all alerts
-        @self.dash_app.callback(
-            [Output('alerts-list', 'children'),
-             Output('alerts-count-badge', 'children')],
-            [Input('acknowledge-all-button', 'n_clicks')]
-        )
-        def update_alerts(n_clicks):
-            # Always update the alerts list and badge count
-            alerts_list, unread_alerts_count = self.page_layouts.create_alerts_list()
-
-            # If acknowledge-all button was clicked, update the status of all alerts to 'read'
-            if n_clicks is not None:
-                self.df_handler.alerts_df['Status'] = 'read'
-                alerts_list, unread_alerts_count = self.page_layouts.create_alerts_list()
-
-            return alerts_list, unread_alerts_count
 
         # Callbacks for dynamic content
         @self.dash_app.callback(

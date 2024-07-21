@@ -2,7 +2,7 @@ from datetime import datetime
 
 from app.dash_callbacks import DashCallbacks
 from dataframes.dataframe_handler import DataFrameHandler
-from config.constants import START_DATE, END_DATE, PROJECT_NAME, UPLOADED_LOGS_PATH, ONSHAPE_LOGS_PATH
+from config.constants import START_DATE, END_DATE, PROJECT_NAME, DatabaseCollections
 import dash
 from dash import dcc
 from dash import html
@@ -41,7 +41,8 @@ class DashPageLayouts:
         ])
 
     def graphs_layout(self):
-        self.data_source_title = "Default Log" if self.df_handler.selected_log_path == ONSHAPE_LOGS_PATH \
+        self.utils.logger.debug("Uploaded logs are: " + str(self.df_handler.filters_data['uploaded-logs']))
+        self.data_source_title = "Default Log" if self.df_handler.selected_log_path == DatabaseCollections.onshape_logs.value \
             else "Selected Uploaded Log"
         return self._create_layout("Interactive Graphs", [
             html.H4(f"Current Data Source - {self.data_source_title}", className="mb-4"),
@@ -58,11 +59,9 @@ class DashPageLayouts:
         ])
 
     def alerts_layout(self):
-        alerts_list, unread_alerts_count = self.create_alerts_list()
         return self._create_layout("Real-time Alerts", [
-            self._create_card("Recent Alerts", html.Div(id='alerts-list', children=alerts_list), 12),
-            self._create_card("Acknowledge All", dbc.Button("Acknowledge All", color="success", className="w-100",
-                                                            id="acknowledge-all-button"), 12),
+            self._create_card("Recent Alerts", self._create_alerts_list(), 12),
+            self._create_card("Acknowledge All", dbc.Button("Acknowledge All", color="success", className="w-100"), 12)
         ])
 
     def search_glossary_layout(self):
@@ -91,7 +90,7 @@ class DashPageLayouts:
         )
 
         return self._create_layout("Search OnShape Glossary", [
-            self._create_card("Search", text_input, 10)
+            self._create_card("Search", text_input, 5)
         ])
 
     def upload_log_layout(self):
@@ -99,22 +98,24 @@ class DashPageLayouts:
             self._create_card("Upload JSON", self._create_upload_component(), 12)
         ])
 
+
     def create_header(self):
         current_date = datetime.now().strftime('%d-%m-%Y')
-        logo_path = "/static/SFM-logo.png"
+        logo_path = "../static/SFM-logo.png"
         return dbc.Navbar(
             dbc.Container([
                 dbc.Row([
                     dbc.Col(html.Img(src=logo_path, height="40px"), width="auto"),
                     dbc.Col(html.H1(PROJECT_NAME, className="text-white"), width="auto"),
                     dbc.Col(
-                        html.H2(
-                            current_date,
-                            className="text-white mt-2",
-                            style={"fontSize": "1.2rem", "color": "lightgrey"}
+                    html.H2(
+                          current_date,
+                          className="text-white mt-2",
+                          style={"fontSize": "1.2rem", "color": "lightgrey"}
                         ),
                         width="auto"
-                    )
+                    ),
+                    dbc.Col(dbc.NavItem(dbc.NavLink("User Icon", href="#", className="text-white")), width="auto")
                 ], align="center", justify="start"),
             ], fluid=True),
             color="primary",
@@ -123,7 +124,6 @@ class DashPageLayouts:
         )
 
     def create_side_menu(self):
-        alert_count = str(self.df_handler.get_unread_alerts_count())
         return dbc.Col([
             dbc.Nav(
                 [
@@ -131,9 +131,7 @@ class DashPageLayouts:
                     self._create_nav_link("fas fa-chart-line", " Graphs", "/graphs"),
                     self._create_nav_link("fas fa-magnifying-glass", " Search Glossary", "/search-glossary"),
                     self._create_nav_link("fas fa-cloud", " Upload Logs", "/upload-log"),
-                    self._create_nav_link("fas fa-bell", " Alerts", "/alerts",
-                                          alert_count,
-                                          "danger", "alerts-count-badge"),
+                    self._create_nav_link("fas fa-bell", " Alerts", "/alerts", "3", "danger"),
                 ],
                 vertical=True,
                 pills=True,
@@ -142,12 +140,14 @@ class DashPageLayouts:
             ),
         ], width=2, className="bg-dark", style={"height": "100%", "overflow": "hidden"})
 
+
     def create_footer(self):
         return dbc.Navbar(
             dbc.Container([
                 dbc.Row([
-                    dbc.Col(html.P(f"© 2024 {PROJECT_NAME}, Inc.", className="text-white text-center mb-0"),
-                            width="auto")
+                    dbc.Col(html.P(f"© 2024 {PROJECT_NAME}, Inc.", className="text-white text-center mb-0"), width="auto"),
+                    dbc.Col(html.P("Privacy Policy", className="text-white text-center mb-0"), width="auto"),
+                    dbc.Col(html.P("Terms of Service", className="text-white text-center mb-0"), width="auto")
                 ], align="center", justify="center", className="w-100")
             ]),
             color="primary",
@@ -164,8 +164,7 @@ class DashPageLayouts:
                     dcc.Location(id='url'),
                     dbc.Col(html.Div(id="page-content"), width=10, style={"height": "100%", "overflow": "auto"})
                 ], style={"flex": "1", "overflow": "hidden", "height": "calc(100vh - 56px)"})
-            ], fluid=True,
-                style={"display": "flex", "flexDirection": "row", "flexGrow": "1", "height": "calc(100vh - 56px)"}),
+            ], fluid=True, style={"display": "flex", "flexDirection": "row", "flexGrow": "1", "height": "calc(100vh - 56px)"}),
             self.create_footer()
         ], style={"display": "flex", "flexDirection": "column", "height": "100vh"})
 
@@ -192,7 +191,7 @@ class DashPageLayouts:
         default_log_value = ""
         if self.df_handler.filters_data['uploaded-logs']:
             default_log_value = self.df_handler.filters_data['uploaded-logs'][
-                0] if self.df_handler.selected_log_path == UPLOADED_LOGS_PATH else ""
+                0] if self.df_handler.selected_log_path == DatabaseCollections.uploaded_logs.value else ""
 
         return html.Div([
             dbc.Row([
@@ -206,35 +205,28 @@ class DashPageLayouts:
                                      placeholder='Select Log', value=default_log_value), width=4)
             ], className="mb-3"),
             dbc.Row([
-                dbc.Col(dcc.DatePickerRange(id='date-picker-range',
-                                            start_date=datetime.strptime(START_DATE, '%d-%m-%Y').date(),
-                                            end_date=datetime.strptime(END_DATE, '%d-%m-%Y').date(),
-                                            display_format='DD-MM-YYYY'), width=12)
+                dbc.Col(dcc.DatePickerRange(id='date-picker-range', start_date=datetime.strptime(START_DATE, '%d-%m-%Y').date(), end_date=datetime.strptime(END_DATE, '%d-%m-%Y').date(), display_format='DD-MM-YYYY'), width=12)
             ], className="mb-3"),
             dbc.Button("Apply Filters", id='apply-filters', color="primary", className="w-100")
         ])
 
-    def create_alerts_list(self) -> tuple:
+    def _create_alerts_list(self) -> html:
         if self.df_handler.alerts_df.shape[0] == 0:
-            alerts_list = html.P("No alerts to display", style={"color": "grey"})
-        else:
-            alerts_list = html.Ul([
-                html.Li(
-                    f"{row['Time']} - {row['Description']} by User: {row['User']} in Document: {row['Document']}",
-                    style={"color": "grey" if row['Status'] == "read" else "black",
-                           "fontWeight": "bold" if row['Status'] == "unread" else "normal"}
-                ) for _, row in self.df_handler.alerts_df.iterrows()
-            ], id='alerts-list', className="list-unstyled")
+            return html.P("No alerts to display", style={"color": "grey"})
+        return html.Ul([
+            html.Li(
+                f"{row['Time']} - {row['User']} - {row['Description']} - {row['Document']}",
+                style={"color": "grey" if row['Status'] == "read" else "black",
+                       "fontWeight": "bold" if row['Status'] == "unread" else "normal"}
+            ) for index, row in self.df_handler.alerts_df.iterrows() if self.df_handler.alerts_df.shape[0] > 0
+        ], className="list-unstyled")
 
-        unread_alerts_count = self.df_handler.get_unread_alerts_count()
-        return alerts_list, str(unread_alerts_count)
-
-    def _create_nav_link(self, icon_class: str, text: str, href: str, badge_text: str = "",
-                         badge_color: str = "", badge_id: str = "") -> dbc.NavLink:
-        children = [html.I(className=icon_class), html.Span(text, className="ml-4")]
+    def _create_nav_link(self, icon_class: str, text: str, href: str, badge_text: str = "", badge_color: str = "") -> dbc.NavLink:
+        children = [html.I(className=icon_class), html.Span(text, className="ml-2")]
         if badge_text:
-            children.append(dbc.Badge(badge_text, color=badge_color, className="ml-2", id=badge_id))
-        return dbc.NavLink(children, href=href, active="exact", className="text-white gap-6")
+            children.append(dbc.Badge(badge_text, color=badge_color, className="ml-2"))
+        return dbc.NavLink(children, href=href, active="exact", className="text-white")
+
 
     def _validate_graph_data(self, df, x, y):
         if not isinstance(df, pd.DataFrame):  # if df is [] list then return empty df
@@ -279,7 +271,7 @@ class DashPageLayouts:
                     'margin': '10px 0'
                 },
                 multiple=False,  # Single file upload
-                accept='.json'  # Accept only JSON files
+                accept='.json'   # Accept only JSON files
             ),
             html.Div(id='output-json-upload', style={'margin': '10px 0'}),
             dbc.Checkbox(
@@ -290,3 +282,4 @@ class DashPageLayouts:
             dbc.Button("Submit", id='submit-button', color="primary", className="w-100", disabled=True),
             html.Div(id='submit-status', style={'margin': '10px 0'})
         ])
+
