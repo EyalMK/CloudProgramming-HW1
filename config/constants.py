@@ -22,6 +22,7 @@ class DatabaseCollections(Enum):
     onshape_logs = "/onShapeLogs"
     uploaded_logs = "/uploaded-jsons"
     glossary_words = "/base-glossary-words"
+    indices_words = "/indices-words"
 
 
 ONSHAPE_LOGS_PATH = DatabaseCollections.onshape_logs.value

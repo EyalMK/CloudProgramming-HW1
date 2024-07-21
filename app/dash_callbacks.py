@@ -134,9 +134,13 @@ class DashCallbacks:
                 results = self.search_engine.perform_search(value)
                 if results:
                     results_to_print = ""
+                    print(f"Results: {results}")
+                    if isinstance(results, int):
+                        return f"{value} is found {results} times."
+
                     for key, val in results.items():
-                        results_to_print += f" {key} is found {val} times.\n"
-                    return f"{value} is found in the glossary.\n{results_to_print}"
+                        results_to_print += f" {key} is found {val} times.\n\n"
+                    return results_to_print
                 else:
                     return f"{value} is not a term in the glossary."
             return "Enter a search term and click the search button."

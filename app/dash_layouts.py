@@ -91,7 +91,7 @@ class DashPageLayouts:
         )
 
         return self._create_layout("Search OnShape Glossary", [
-            self._create_card("Search", text_input, 5)
+            self._create_card("Search", text_input, 10)
         ])
 
     def upload_log_layout(self):
