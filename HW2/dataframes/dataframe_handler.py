@@ -74,15 +74,13 @@ class DataFrameHandler:
         self.df['Date'] = self.raw_df['Time'].dt.date
 
     def _populate_uploaded_logs(self, data=None):
-        if data is None:
-            data = self.db_handler.read_from_database(UPLOADED_LOGS_PATH)
+        data_to_process = data
+        if data_to_process is None:
+            data_to_process = self.db_handler.read_from_database(UPLOADED_LOGS_PATH)
         logs = []
-        if data:
-            for key in data:
-                logs.append(data[key]['fileName'])
-            if self.raw_df is None:  # if the default path is not populated with data, populate it with the uploaded
-                # logs
-                self._dataframes_from_data(data, collection_source=UPLOADED_LOGS_PATH)
+        if data_to_process:
+            for key in data_to_process:
+                logs.append(data_to_process[key]['fileName'])
         self.filters_data['uploaded-logs'] = logs
 
     def _populate_filters(self):
