@@ -65,8 +65,8 @@ class DashPageLayouts:
                                                             id="acknowledge-all-button"), 12),
         ])
 
-    def search_glossary_layout(self):
-        text_input = html.Div(
+    def text_search_layout(self):
+        return html.Div(
             [
                 dbc.Row(
                     [
@@ -85,18 +85,39 @@ class DashPageLayouts:
                     align="center"
                 ),
                 html.Br(),
-                # html.P("Search results:"),
                 html.P(id="output")
             ]
         )
 
+    def search_glossary_layout(self):
         return self._create_layout("Search OnShape Glossary", [
-            self._create_card("Search", text_input, 10)
+            self._create_card("Search", self.text_search_layout(), 10)
         ])
 
     def upload_log_layout(self):
         return self._create_layout("Upload Log", [
             self._create_card("Upload JSON", self._create_upload_component(), 12)
+        ])
+
+    def chatbot_layout(self):
+        initial_greeting = "ShapeFlowBot: Hello! I'm ShapeFlowBot! I can assist you with various questions regarding ShapeFlow Monitor. How can I help you today?"
+        return self._create_layout("Chatbot Assistant", [
+            dbc.Row([
+                dbc.Col(
+                    html.Div([
+                        html.H5("Chat with ShapeFlowBot", className="card-title mb-5"),
+                        dcc.Textarea(
+                            id='chat-history',
+                            value=initial_greeting,
+                            readOnly=True,
+                            style={'width': '100%', 'height': '65vh'}
+                        ),
+                        dbc.Input(id='chat-input', placeholder='Type a message...', type='text'),
+                        dbc.Button('Send', id='send-button', color='primary', className='mt-2')
+                    ]),
+                    width=12
+                )
+            ])
         ])
 
     def create_header(self):
@@ -129,11 +150,12 @@ class DashPageLayouts:
                 [
                     self._create_nav_link("fas fa-tachometer-alt", " Dashboard", "/"),
                     self._create_nav_link("fas fa-chart-line", " Graphs", "/graphs"),
-                    self._create_nav_link("fas fa-magnifying-glass", " Search Glossary", "/search-glossary"),
                     self._create_nav_link("fas fa-cloud", " Upload Logs", "/upload-log"),
+                    self._create_nav_link("fas fa-magnifying-glass", " Search Glossary", "/search-glossary"),
                     self._create_nav_link("fas fa-bell", " Alerts", "/alerts",
                                           alert_count,
                                           "danger", "alerts-count-badge"),
+                    self._create_nav_link("fas fa-comment", " Chatbot Assistant", "/chatbot"),
                 ],
                 vertical=True,
                 pills=True,

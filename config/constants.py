@@ -5,8 +5,8 @@ from enum import Enum
 
 PROJECT_NAME = "ShapeFlow Monitor"
 PORT = 8050
-FONT_AWESOME_CDN = "https://use.fontawesome.com/releases/v6.0.0/css/all.css"
-DB_CONN_URL = "https://shapeflow-monitor-default-rtdb.europe-west1.firebasedatabase.app/"
+FONT_AWESOME_CDN = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+DB_CONN_URL = "https://shapeflow-monitor-final-default-rtdb.europe-west1.firebasedatabase.app/"
 ONSHAPE_GLOSSARY_URL = "https://cad.onshape.com/help/Content/Glossary/glossary.htm?tocpath=_____19"
 START_DATE = date(2024, 4, 21).strftime('%d-%m-%Y')
 END_DATE = datetime.now().strftime('%d-%m-%Y')
@@ -23,6 +23,7 @@ class DatabaseCollections(Enum):
     uploaded_logs = "/uploaded-jsons"
     glossary_words = "/base-glossary-words"
     indices_words = "/indices-words"
+    bot_prompts = "/chatbot-patterns"
 
 
 ONSHAPE_LOGS_PATH = DatabaseCollections.onshape_logs.value

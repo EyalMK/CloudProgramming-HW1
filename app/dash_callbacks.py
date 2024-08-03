@@ -4,6 +4,7 @@ import pandas as pd
 import dash
 from dash.dependencies import Input, Output, State
 
+from chatbot.chat_bot import ChatBot
 from config.constants import DatabaseCollections
 from dataframes.dataframe_handler import DataFrameHandler
 from search_engine.search_engine import SearchEngine
@@ -18,6 +19,7 @@ class DashCallbacks:
         self.page_layouts = page_layouts
         self.utils = utils
         self.search_engine = SearchEngine(db_handler, utils)
+        self.chat_bot = ChatBot(db_handler, utils)
         self.register_callbacks()
 
     def register_callbacks(self):
@@ -161,6 +163,26 @@ class DashCallbacks:
 
             return alerts_list, unread_alerts_count
 
+        @self.dash_app.callback(
+            Output('chat-history', 'value'),
+            [Input('send-button', 'n_clicks')],
+            [State('chat-input', 'value'), State('chat-history', 'value')]
+        )
+        def update_chat(n_clicks, user_input, chat_history):
+            if n_clicks is None or user_input is None or user_input.strip() == "":
+                return chat_history
+
+            response = self.chat_bot.respond(user_input)
+            new_history = f"{chat_history}\n\nYou: {user_input}\n\nShapeFlowBot: {response}"
+            return new_history
+
+        @self.dash_app.callback(
+            Output('chat-input', 'value'),
+            [Input('send-button', 'n_clicks')]
+        )
+        def clear_input(n_clicks):
+            return ''
+
         # Callbacks for dynamic content
         @self.dash_app.callback(
             Output("page-content", "children"),
@@ -175,5 +197,7 @@ class DashCallbacks:
                 return self.page_layouts.search_glossary_layout()
             elif pathname == "/upload-log":
                 return self.page_layouts.upload_log_layout()
+            elif pathname == "/chatbot":
+                return self.page_layouts.chatbot_layout()
             else:
                 return self.page_layouts.dashboard_layout()
