@@ -24,7 +24,7 @@ class Utilities:
         firebase_handler.setFormatter(console_formatter)
         self.logger.addHandler(firebase_handler)
 
-        # DB Log Handler
+        # Console Log Handler
         console_logger = logging.StreamHandler()
         console_logger.setFormatter(console_formatter)
         self.logger.addHandler(console_logger)
