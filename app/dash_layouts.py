@@ -228,25 +228,34 @@ class DashPageLayouts:
             default_log_value = self.df_handler.filters_data['uploaded-logs'][
                 0] if self.df_handler.selected_log_path == UPLOADED_LOGS_PATH else ""
 
+        now = datetime.now().strftime('%Y-%m-%dT%H:%M')
+
         return html.Div([
+            self._create_filter_row('document-dropdown', 'Select Document', self.df_handler.filters_data['documents'],
+                                    'select-all-documents', 'clear-all-documents'),
+            self._create_filter_row('user-dropdown', 'Select User', self.df_handler.filters_data['users'],
+                                    'select-all-users', 'clear-all-users'),
+            self._create_filter_row('logs-dropdown', 'Select Log', self.df_handler.filters_data['uploaded-logs'],
+                                    'select-all-logs', 'clear-all-logs', default_value=default_log_value),
+            self._create_filter_row('graphs-dropdown', 'Select Graphs', self.df_handler.filters_data['graphs'],
+                                    'select-all-graphs', 'clear-all-graphs'),
             dbc.Row([
-                dbc.Col(dcc.Dropdown(id='document-dropdown', options=self.df_handler.filters_data['documents'],
-                                     placeholder='Select Document'), width=4),
-                dbc.Col(dcc.Dropdown(id='user-dropdown', options=self.df_handler.filters_data['users'],
-                                     placeholder='Select User'), width=4),
-                dbc.Col(dcc.Dropdown(id='description-dropdown', options=self.df_handler.filters_data['descriptions'],
-                                     placeholder='Select Description'), width=4),
-                dbc.Col(dcc.Dropdown(id='logs-dropdown', options=self.df_handler.filters_data['uploaded-logs'],
-                                     placeholder='Select Log', value=default_log_value), width=4)
-            ], className="mb-3"),
-            dbc.Row([
-                dbc.Col(dcc.DatePickerRange(id='date-picker-range',
-                                            start_date=datetime.strptime(START_DATE, '%d-%m-%Y').date(),
-                                            end_date=datetime.strptime(END_DATE, '%d-%m-%Y').date(),
-                                            display_format='DD-MM-YYYY'), width=12)
+                dbc.Col(html.Div([
+                    html.Label("Start Time"),
+                    dcc.Input(id='start-time', type='datetime-local',
+                              min=datetime.strptime(START_DATE, '%d-%m-%Y').strftime('%Y-%m-%dT%H:%M'), max=now,
+                              value=datetime.strptime(START_DATE, '%d-%m-%Y').strftime('%Y-%m-%dT%H:%M'),
+                              className='form-control')
+                ]), width=6),
+                dbc.Col(html.Div([
+                    html.Label("End Time"),
+                    dcc.Input(id='end-time', type='datetime-local',
+                              min=datetime.strptime(START_DATE, '%d-%m-%Y').strftime('%Y-%m-%dT%H:%M'), max=now,
+                              value=now, className='form-control')
+                ]), width=6)
             ], className="mb-3"),
             dbc.Button("Apply Filters", id='apply-filters', color="primary", className="w-100")
-        ])
+        ], style={"padding": "10px", "maxWidth": "1200px", "margin": "auto"})
 
     def create_alerts_list(self) -> tuple:
         if self.df_handler.alerts_df.shape[0] == 0:
@@ -373,6 +382,20 @@ class DashPageLayouts:
                                      var_name='Type', value_name='Occurrences Count')
 
         return occurrences_melted
+
+    def _create_filter_row(self, dropdown_id, placeholder, options, select_all_id, clear_all_id,
+                           default_value=None) -> dbc.Row:
+        return dbc.Row([
+            dbc.Col(
+                dcc.Dropdown(id=dropdown_id, options=options, placeholder=placeholder, value=default_value, multi=True),
+                width=7),
+            dbc.Col(dbc.Button([html.I(className="fas fa-check-double", style={"margin-right": "5px"}), "Select All"],
+                               id=select_all_id, color="secondary",
+                               className="d-flex align-items-center justify-content-center w-100"), width=2),
+            dbc.Col(dbc.Button([html.I(className="fas fa-minus", style={"margin-right": "5px"}), "Clear All"],
+                               id=clear_all_id, color="secondary",
+                               className="d-flex align-items-center justify-content-center w-100"), width=2)
+        ], className="mb-3")
 
     def _create_upload_component(self) -> html.Div:
         return html.Div([

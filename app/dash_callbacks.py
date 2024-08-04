@@ -22,6 +22,19 @@ class DashCallbacks:
         self.chat_bot = ChatBot(db_handler, utils)
         self.register_callbacks()
 
+    def _update_selection(self, select_all_clicks, clear_all_clicks, options):
+        ctx = dash.callback_context
+
+        if not ctx.triggered:
+            return dash.no_update
+
+        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+
+        if 'select-all' in button_id and select_all_clicks:
+            return [option for option in options]
+        elif 'clear-all' in button_id and clear_all_clicks:
+            return []
+
     def register_callbacks(self):
         # Callback to update graphs
         @self.dash_app.callback(
@@ -84,8 +97,13 @@ class DashCallbacks:
 
                 try:
                     json_data = json.loads(decoded)
+
+                    processed_filename = filename
+                    while processed_filename in self.df_handler.filters_data['uploaded-logs']:
+                        processed_filename = processed_filename.split('.json')[0] + " - Copy.json"
+
                     data_to_store = {
-                        "fileName": filename,
+                        "fileName": processed_filename,
                         "data": json_data
                     }
                     self.page_layouts.uploaded_json = data_to_store  # Store JSON data
@@ -182,6 +200,42 @@ class DashCallbacks:
         )
         def clear_input(n_clicks):
             return ''
+
+        @self.dash_app.callback(
+            Output('document-dropdown', 'value'),
+            [Input('select-all-documents', 'n_clicks'),
+             Input('clear-all-documents', 'n_clicks')],
+            [State('document-dropdown', 'options')]
+        )
+        def update_document_selection(select_all_clicks, clear_all_clicks, options):
+            return self._update_selection(select_all_clicks, clear_all_clicks, options)
+
+        @self.dash_app.callback(
+            Output('user-dropdown', 'value'),
+            [Input('select-all-users', 'n_clicks'),
+             Input('clear-all-users', 'n_clicks')],
+            [State('user-dropdown', 'options')]
+        )
+        def update_user_selection(select_all_clicks, clear_all_clicks, options):
+            return self._update_selection(select_all_clicks, clear_all_clicks, options)
+
+        @self.dash_app.callback(
+            Output('logs-dropdown', 'value'),
+            [Input('select-all-logs', 'n_clicks'),
+             Input('clear-all-logs', 'n_clicks')],
+            [State('logs-dropdown', 'options')]
+        )
+        def update_logs_selection(select_all_clicks, clear_all_clicks, options):
+            return self._update_selection(select_all_clicks, clear_all_clicks, options)
+
+        @self.dash_app.callback(
+            Output('graphs-dropdown', 'value'),
+            [Input('select-all-graphs', 'n_clicks'),
+             Input('clear-all-graphs', 'n_clicks')],
+            [State('graphs-dropdown', 'options')]
+        )
+        def update_graphs_selection(select_all_clicks, clear_all_clicks, options):
+            return self._update_selection(select_all_clicks, clear_all_clicks, options)
 
         # Callbacks for dynamic content
         @self.dash_app.callback(
