@@ -40,6 +40,16 @@ class DashPageLayouts:
             ), 6)
         ])
 
+    def working_hours_layout(self):
+        return self._create_layout("Working Hours Analysis", [
+            self._create_card("Working Hours Overview", dcc.Graph(
+                figure=self._create_working_hours_chart()  # Directly use the figure from _create_working_hours_chart
+            ), 12),
+            self._create_card("Night & Weekend & Holidays Work Occurrences", dcc.Graph(figure=self._create_stacked_bar_chart(
+                self._create_occurrences_chart(), 'User', 'Occurrences Count', 'Night & Weekend & Holidays Work Occurrences', color='Type')
+            ), 12)
+        ])
+
     def graphs_layout(self):
         self.data_source_title = "Default Log" if self.df_handler.selected_log_path == ONSHAPE_LOGS_PATH \
             else "Selected Uploaded Log"
@@ -152,6 +162,8 @@ class DashPageLayouts:
                     self._create_nav_link("fas fa-chart-line", " Graphs", "/graphs"),
                     self._create_nav_link("fas fa-cloud", " Upload Logs", "/upload-log"),
                     self._create_nav_link("fas fa-magnifying-glass", " Search Glossary", "/search-glossary"),
+                    # New tab for working hours
+                    self._create_nav_link("fas fa-clock", " Working Hours", "/working-hours"),
                     self._create_nav_link("fas fa-bell", " Alerts", "/alerts",
                                           alert_count,
                                           "danger", "alerts-count-badge"),
@@ -271,6 +283,32 @@ class DashPageLayouts:
             return px.line(title=title)
         return px.line(df, x=x, y=y, title=title)
 
+    def _create_stacked_bar_chart(self, df, x, y, title, color):
+        # Ensure the DataFrame is correctly structured and non-empty
+        df, x, y = self._validate_graph_data(df, x, y)
+        if len(df) == 0:
+            return px.bar(title=title)
+
+        # Create the grouped horizontal bar chart
+        fig = px.bar(df, x=y, y=x, color=color, title=title, barmode='group', orientation='h')
+
+        # Update layout to enable grid lines
+        fig.update_layout(
+            xaxis=dict(
+                showgrid=True,  # Enable grid lines on the x-axis
+                gridcolor='white',  # Optional: customize grid line color
+                zeroline=True,  # Show zero line
+                zerolinecolor='white'  # Optional: customize zero line color
+            ),
+            yaxis=dict(
+                showgrid=True,  # Enable grid lines on the y-axis
+                gridcolor='white'  # Optional: customize grid line color
+            ),
+            plot_bgcolor="rgba(229,236,246,255)"  # Transparent background
+        )
+
+        return fig
+
     def _create_bar_chart(self, df: pd.DataFrame, x: str, y: str, title: str) -> px.bar:
         df, x, y = self._validate_graph_data(df, x, y)
         if len(df) == 0:
@@ -281,6 +319,60 @@ class DashPageLayouts:
         if names is None or values is None or len(df) == 0:
             return px.pie(title=title)
         return px.pie(df, names=names, values=values, title=title)
+
+    def _create_working_hours_chart(self):
+        df = self.df_handler.df  # Access the preprocessed DataFrame directly
+
+        # Ensure 'Time' column is correctly parsed and drop rows with NaT values
+        if 'Time' in df.columns:
+            df['Time'] = pd.to_datetime(df['Time'], errors='coerce')
+            df = df.dropna(subset=['Time'])
+
+            # Extract the hour of the day
+            df['Hour'] = df['Time'].dt.hour
+
+            # Group by User and Hour to find the distribution of work hours
+            working_hours = df.groupby(['User', 'Hour']).size().reset_index(name='ActivityCount')
+
+            # Define custom tick labels for the x-axis
+            tickvals = list(range(0, 24, 1))  # Values: 0, 1, 2, ..., 23
+            ticktext = [f"{hour}:00" for hour in tickvals]  # Labels: "0:00", "2:00", ..., "22:00"
+
+            # Create the bar chart with custom tick labels
+            fig = px.bar(working_hours, x='Hour', y='ActivityCount', color='User',barmode='group',
+                         title='Working Hours Distribution by Student')
+
+            # Update the x-axis with custom tick labels
+            fig.update_layout(xaxis=dict(
+                tickmode='array',
+                tickvals=tickvals,
+                ticktext=ticktext
+            ))
+
+            return fig
+
+        else:
+            print("Error: 'Time' column not found in DataFrame.")
+            return self._create_bar_chart(pd.DataFrame(), x='Hour', y='ActivityCount',
+                                          title="Working Hours Overview")
+
+    def _create_occurrences_chart(self):
+        df = self.df_handler.df  # Access the preprocessed DataFrame directly
+        df['Time'] = pd.to_datetime(df['Time'])
+
+        # Extract night, weekend, and holiday occurrences
+        df['Night'] = df['Time'].dt.hour.isin(range(0, 6)) | df['Time'].dt.hour.isin(range(20, 24))
+        df['Weekend'] = df['Time'].dt.weekday.isin([5, 6])
+        df['Holiday'] = df['Time'].dt.date == pd.to_datetime('2023-05-15').date()
+
+        # Count the occurrences of night, weekend, and holiday work
+        occurrences = df.groupby('User').agg({'Night': 'sum', 'Weekend': 'sum', 'Holiday': 'sum'}).reset_index()
+
+        # Melt the DataFrame to get it in a suitable format for plotting
+        occurrences_melted = pd.melt(occurrences, id_vars=['User'], value_vars=['Night', 'Weekend', 'Holiday'],
+                                     var_name='Type', value_name='Occurrences Count')
+
+        return occurrences_melted
 
     def _create_upload_component(self) -> html.Div:
         return html.Div([

@@ -193,6 +193,8 @@ class DashCallbacks:
                 return self.page_layouts.graphs_layout()
             elif pathname == "/alerts":
                 return self.page_layouts.alerts_layout()
+            elif pathname == '/working-hours':  # New Route for Working Hours
+                return self.page_layouts.working_hours_layout()
             elif pathname == "/search-glossary":
                 return self.page_layouts.search_glossary_layout()
             elif pathname == "/upload-log":

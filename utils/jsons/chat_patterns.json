@@ -21,7 +21,7 @@
             { "pattern": "what (.*) onshape\\??", "responses": ["OnShape is a cloud-based CAD platform that allows teams to collaborate on designing products in real time."] },
             { "pattern": "how do i use onshape\\??", "responses": ["You can use OnShape by signing up for an account, creating a new document, and starting your design using its powerful CAD tools."] },
             { "pattern": "what are the benefits of using onshape\\??", "responses": ["Using OnShape offers benefits like real-time collaboration, version control, and access from any device with an internet connection."] },
-            { "pattern": "how does onshape support collaboration\\??", "responses": ["OnShape supports collaboration by allowing multiple users to work on the same document simultaneously, with changes being updated in real-time."] },
+            { "pattern": "how does onshape support collaboration\\??", "responses": ["OnShape supports co llaboration by allowing multiple users to work on the same document simultaneously, with changes being updated in real-time."] },
             { "pattern": "what file formats does onshape support\\??", "responses": ["OnShape supports various file formats including STEP, IGES, STL, and many others for import and export."] },
             { "pattern": "is onshape secure\\??", "responses": ["Yes, OnShape uses industry-standard security measures to protect your data, including encryption and regular security audits."] },
             { "pattern": "can i use onshape for free\\??", "responses": ["OnShape offers a free plan with limited features, as well as professional plans with more advanced capabilities."] },

@@ -68,10 +68,14 @@ class DataFrameHandler:
         self.df = self.raw_df = pd.DataFrame(data[first_key]['data'])
 
     def _convert_time_column(self):
-        self.df['Time'] = pd.to_datetime(self.raw_df['Time'])
+        # Ensure 'Time' column is properly parsed
+        if 'Time' in self.raw_df.columns:
+            self.df['Time'] = pd.to_datetime(self.raw_df['Time'], errors='coerce')
 
     def _extract_date_for_grouping(self):
-        self.df['Date'] = self.raw_df['Time'].dt.date
+        # Ensure 'Date' column is correctly extracted from 'Time'
+        if 'Time' in self.df.columns:
+            self.df['Date'] = self.df['Time'].dt.date
 
     def _populate_uploaded_logs(self, data=None):
         data_to_process = data
@@ -84,20 +88,26 @@ class DataFrameHandler:
         self.filters_data['uploaded-logs'] = logs
 
     def _populate_filters(self):
-        self.filters_data['documents'] = [doc for doc in self.raw_df['Document'].unique()]
-        self.filters_data['users'] = [user for user in self.raw_df['User'].unique()]
-        self.filters_data['descriptions'] = [desc for desc in self.raw_df['Description'].unique()]
+        if 'Document' in self.raw_df.columns:
+            self.filters_data['documents'] = [doc for doc in self.raw_df['Document'].unique()]
+        if 'User' in self.raw_df.columns:
+            self.filters_data['users'] = [user for user in self.raw_df['User'].unique()]
+        if 'Description' in self.raw_df.columns:
+            self.filters_data['descriptions'] = [desc for desc in self.raw_df['Description'].unique()]
 
     def _group_activity_over_time(self):
-        self.activity_over_time = self.raw_df.groupby('Date').size().reset_index(name='ActivityCount')
+        if 'Date' in self.df.columns:
+            self.activity_over_time = self.df.groupby('Date').size().reset_index(name='ActivityCount')
 
     def _group_document_usage(self):
-        self.document_usage = self.raw_df['Document'].value_counts().reset_index(name='UsageCount')
-        self.document_usage.columns = ['Document', 'UsageCount']
+        if 'Document' in self.df.columns:
+            self.document_usage = self.df['Document'].value_counts().reset_index(name='UsageCount')
+            self.document_usage.columns = ['Document', 'UsageCount']
 
     def _group_user_activity(self):
-        self.user_activity = self.raw_df['User'].value_counts().reset_index(name='ActivityCount')
-        self.user_activity.columns = ['User', 'ActivityCount']
+        if 'User' in self.df.columns:
+            self.user_activity = self.df['User'].value_counts().reset_index(name='ActivityCount')
+            self.user_activity.columns = ['User', 'ActivityCount']
 
     def _undo_redo_activity_detection(self):
         # Filter redo and undo actions
