@@ -20,7 +20,7 @@ class App:
             self.dash_app = dash.Dash(__name__, server=self.server, external_stylesheets=[dbc.themes.BOOTSTRAP, FONT_AWESOME_CDN])
             self.dash_app.config.suppress_callback_exceptions = True
             self.dash_page_layouts = DashPageLayouts(self.dash_app, self.db_handler, self.utils)
-            # self._initialize_server() # NGROK tunnel outsourcing from Colab, to simulate debugging with teammates via Colab. :)
+            self._initialize_server() # NGROK tunnel outsourcing from Colab, to simulate debugging with teammates via Colab. :)
             self._setup_routes()
         except Exception as e:
             self.utils.logger.error(f"Error initializing the app: {str(e)}")
