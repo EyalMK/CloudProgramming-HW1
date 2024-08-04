@@ -245,6 +245,8 @@ class DashCallbacks:
         def display_page(pathname: str):
             if pathname == "/graphs":
                 return self.page_layouts.graphs_layout()
+            elif pathname == "/dashboard":
+                return self.page_layouts.dashboard_layout()
             elif pathname == "/alerts":
                 return self.page_layouts.alerts_layout()
             elif pathname == '/working-hours':  # New Route for Working Hours
@@ -256,4 +258,4 @@ class DashCallbacks:
             elif pathname == "/chatbot":
                 return self.page_layouts.chatbot_layout()
             else:
-                return self.page_layouts.dashboard_layout()
+                return self.page_layouts.landing_page_layout()

@@ -67,6 +67,51 @@ class DashPageLayouts:
             ), 6)
         ])
 
+    def landing_page_layout(self):
+        image_path = "/static/homepage_image.jpg"
+        return self._create_layout("Welcome to the ShapeFlow Monitor Tool", [
+            self._create_card("Overview",
+                              html.P(
+                                  "The ShapeFlow Monitor Tool is your go-to solution for monitoring and analyzing the performance of your OnShape team. Designed with managers in mind, this application provides comprehensive insights into team activity, project progress, and collaboration efficiency by processing log files in JSON format from the OnShape platform."),
+                              12
+                              ),
+
+            self._create_card("How to Get Started:",
+                              html.Div([
+                                  self._create_styled_list_item(
+                                      "Upload Log Files:",
+                                      "Begin by navigating to the Setup section. Here, you can upload a new log file from your device and save it to the database.",
+                                      icon="fas fa-upload"),
+                                  self._create_styled_list_item(
+                                      "Select Default Log:",
+                                      "If you want the uploaded log to be used as the default for analysis, simply choose the 'Set as Default' option.",
+                                      icon="fas fa-check"),
+                                  self._create_styled_list_item(
+                                      "Explore Visualizations:",
+                                      "Head over to the Graphs section to explore various analytical graphs that provide a deep dive into your team's performance and activities.",
+                                      icon="fas fa-chart-bar"),
+                                  self._create_styled_list_item(
+                                      "Analyze Working Hours:",
+                                      "Visit the Working Hours section to review detailed analyses of your team's working hours, including patterns and productivity trends.",
+                                      icon="fas fa-clock"),
+                                  self._create_styled_list_item(
+                                      "Stay Informed with Alerts:",
+                                      "The Alerts section will keep you updated with important notifications derived from the log file, ensuring you never miss a critical insight.",
+                                      icon="fas fa-bell"),
+                                  self._create_styled_list_item(
+                                      "Chatbot Assistance:",
+                                      "Use the Chatbot feature for instant assistance and answers to your questions about the tool and its functionalities.",
+                                      icon="fas fa-comments"),
+                                  self._create_styled_list_item(
+                                      "Search Glossary:",
+                                      "Easily find and understand specific terms or features using the Search Glossary option.",
+                                      icon="fas fa-search"),
+                              ], style={"list-style-type": "none", "padding": "0"}),
+                              12
+                              ),
+
+        ], style={"max-width": "1200px", "margin": "0 auto", "padding": "20px"})
+
     def alerts_layout(self):
         alerts_list, unread_alerts_count = self.create_alerts_list()
         return self._create_layout("Real-time Alerts", [
@@ -74,6 +119,17 @@ class DashPageLayouts:
             self._create_card("Acknowledge All", dbc.Button("Acknowledge All", color="success", className="w-100",
                                                             id="acknowledge-all-button"), 12),
         ])
+
+    def _create_styled_list_item(self, header: str, text: str, icon: str = None) -> html.Div:
+        return html.Div(
+            [
+                html.I(className=icon, style={"margin-right": "10px", "color": "#007bff"}) if icon else None,
+                html.Span(header, style={"font-weight": "bold", "font-size": "1rem"}),
+                html.Span(f" {text}", style={"font-size": "1rem", "color": "#343a40"})
+            ],
+            style={"padding": "10px", "margin-bottom": "5px", "background-color": "#f8f9fa", "border-radius": "5px",
+                   "box-shadow": "0 1px 2px rgba(0, 0, 0, 0.1)"}
+        )
 
     def text_search_layout(self):
         return html.Div(
@@ -158,7 +214,8 @@ class DashPageLayouts:
         return dbc.Col([
             dbc.Nav(
                 [
-                    self._create_nav_link("fas fa-tachometer-alt", " Dashboard", "/"),
+                    self._create_nav_link("fas fa-house", " Home", "/"),
+                    self._create_nav_link("fas fa-tachometer-alt", " Dashboard", "/dashboard"),
                     self._create_nav_link("fas fa-chart-line", " Graphs", "/graphs"),
                     self._create_nav_link("fas fa-cloud", " Upload Logs", "/upload-log"),
                     self._create_nav_link("fas fa-magnifying-glass", " Search Glossary", "/search-glossary"),
@@ -203,7 +260,7 @@ class DashPageLayouts:
             self.create_footer()
         ], style={"display": "flex", "flexDirection": "column", "height": "100vh"})
 
-    def _create_layout(self, title: str, children: list) -> dbc.Container:
+    def _create_layout(self, title: str, children: list, style: dict = None) -> dbc.Container:
         return dbc.Container([
             dbc.Row([
                 dbc.Col(
@@ -212,7 +269,7 @@ class DashPageLayouts:
                 )
             ]),
             dbc.Row(children)
-        ], style={"padding": "20px"})
+        ], style=style if style else {"padding": "20px"})
 
     def _create_card(self, title: str, content: html, width: int) -> dbc.Col:
         return dbc.Col(dbc.Card([
@@ -333,6 +390,8 @@ class DashPageLayouts:
         df = self.df_handler.df  # Access the preprocessed DataFrame directly
 
         # Ensure 'Time' column is correctly parsed and drop rows with NaT values
+        if df is None:
+            df = pd.DataFrame(columns=['Time', 'Hour', 'User'])
         if 'Time' in df.columns:
             df['Time'] = pd.to_datetime(df['Time'], errors='coerce')
             df = df.dropna(subset=['Time'])
@@ -367,6 +426,8 @@ class DashPageLayouts:
 
     def _create_occurrences_chart(self):
         df = self.df_handler.df  # Access the preprocessed DataFrame directly
+        if df is None:
+            df = pd.DataFrame(columns=['Time', 'User'])
         df['Time'] = pd.to_datetime(df['Time'])
 
         # Extract night, weekend, and holiday occurrences
