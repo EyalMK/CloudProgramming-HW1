@@ -14,7 +14,7 @@ class DataFrameHandler:
             'documents': [],
             'users': [],
             'descriptions': [],
-            'uploaded-logs': ['Default'],
+            'uploaded-logs': [],
             'graphs': []
         }
         self.activity_over_time = []
@@ -38,7 +38,7 @@ class DataFrameHandler:
     def process_df(self):
         self._populate_uploaded_logs()
         if self.raw_df is not None:
-            self._convert_time_column()
+            self._convert_time_column(dataframe=self.raw_df)
             self._extract_date_for_grouping()
             self._populate_filters()
             self._group_activity_over_time()
@@ -68,10 +68,25 @@ class DataFrameHandler:
         first_key = next(iter(data))
         self.df = self.raw_df = pd.DataFrame(data[first_key]['data'])
 
-    def _convert_time_column(self):
+    def _convert_time_column(self, dataframe):
         # Ensure 'Time' column is properly parsed
         if 'Time' in self.raw_df.columns:
-            self.df['Time'] = pd.to_datetime(self.raw_df['Time'], errors='coerce')
+            dataframe['Time'] = pd.to_datetime(dataframe['Time'], errors='coerce')
+
+    def extract_working_hours_data(self):
+        if self.df is None:
+            return None
+
+        processed_df = self.df
+        if 'Time' in self.raw_df.columns:
+            self._convert_time_column(dataframe=processed_df)
+            processed_df = processed_df.dropna(subset=['Time'])
+
+            # Extract the hour of the day
+            processed_df['Hour'] = processed_df['Time'].dt.hour
+
+            # Group by User and Hour to find the distribution of work hours
+            return processed_df.groupby(['User', 'Hour']).size().reset_index(name='ActivityCount')
 
     def _extract_date_for_grouping(self):
         # Ensure 'Date' column is correctly extracted from 'Time'
@@ -82,7 +97,7 @@ class DataFrameHandler:
         data_to_process = data
         if data_to_process is None:
             data_to_process = self.db_handler.read_from_database(UPLOADED_LOGS_PATH)
-        logs = []
+        logs = ['Default Log']
         if data_to_process:
             for key in data_to_process:
                 logs.append(data_to_process[key]['fileName'])

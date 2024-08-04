@@ -251,7 +251,6 @@ class DashPageLayouts:
                     self._create_nav_link("fas fa-chart-line", " Graphs", "/graphs"),
                     self._create_nav_link("fas fa-cloud", " Upload Logs", "/upload-log"),
                     self._create_nav_link("fas fa-magnifying-glass", " Search Glossary", "/search-glossary"),
-                    # New tab for working hours
                     self._create_nav_link("fas fa-clock", " Working Hours", "/working-hours"),
                     self._create_nav_link("fas fa-bell", " Alerts", "/alerts",
                                           alert_count,
@@ -419,21 +418,10 @@ class DashPageLayouts:
         return px.pie(df, names=names, values=values, title=title)
 
     def _create_working_hours_chart(self):
-        df = self.df_handler.df  # Access the preprocessed DataFrame directly
+        working_hours = self.df_handler.extract_working_hours_data()
 
         # Ensure 'Time' column is correctly parsed and drop rows with NaT values
-        if df is None:
-            df = pd.DataFrame(columns=['Time', 'Hour', 'User'])
-        if 'Time' in df.columns:
-            df['Time'] = pd.to_datetime(df['Time'], errors='coerce')
-            df = df.dropna(subset=['Time'])
-
-            # Extract the hour of the day
-            df['Hour'] = df['Time'].dt.hour
-
-            # Group by User and Hour to find the distribution of work hours
-            working_hours = df.groupby(['User', 'Hour']).size().reset_index(name='ActivityCount')
-
+        if working_hours is not None:
             # Define custom tick labels for the x-axis
             tickvals = list(range(0, 24, 1))  # Values: 0, 1, 2, ..., 23
             ticktext = [f"{hour}:00" for hour in tickvals]  # Labels: "0:00", "2:00", ..., "22:00"
@@ -450,7 +438,6 @@ class DashPageLayouts:
             ))
 
             return fig
-
         else:
             print("Error: 'Time' column not found in DataFrame.")
             return self._create_bar_chart(pd.DataFrame(), x='Hour', y='ActivityCount',
