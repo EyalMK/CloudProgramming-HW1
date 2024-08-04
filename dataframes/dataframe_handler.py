@@ -14,7 +14,7 @@ class DataFrameHandler:
             'documents': [],
             'users': [],
             'descriptions': [],
-            'uploaded-logs': [],
+            'uploaded-logs': ['Default'],
             'graphs': []
         }
         self.activity_over_time = []

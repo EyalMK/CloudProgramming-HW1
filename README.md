@@ -6,8 +6,7 @@ ShapeFlow Monitor is a cloud-based web application designed for analyzing and vi
 - [Features](#features)
 - [Getting Started](#getting-started)
     - [Prerequisites](#prerequisites)
-    - [Installation](#installation)
-    - [Running the Project](#running-the-project)
+- [Installation](#installation)
 - [Environment Configuration](#environment-configuration)
 - [Project Structure](#project-structure)
 - [Scripts](#scripts)
@@ -30,14 +29,19 @@ ShapeFlow Monitor is a cloud-based web application designed for analyzing and vi
 - Ngrok account and authentication token.
 - Firebase database setup with appropriate credentials.
 
-### Installation
+## Installation
 
-#### Using Google Colab
+### *Using Google Colab*
+1. Head to https://colab.research.google.com/
+2. Click File in the menu, and open notebook
+3. Select GitHub tab
+4. Search for GitHub user: ``` EyalMK```
+5. Select repository ShapeFlow-Monitor-Cloud
+6. Select branch HW3
+7. Open main.ipynb
+8. Execute all cells.
 
-1. Open **main.ipynb** as a notebook in Google Colab
-2. Run the notebook: Click on the "Run" button to execute the cells.
-
-#### Local Installation
+### *Local Installation*
 
 1. **Clone the repository**:
     ```sh
@@ -54,20 +58,6 @@ ShapeFlow Monitor is a cloud-based web application designed for analyzing and vi
 3. **Install the dependencies**:
     ```sh
     pip install .
-    ```
-
-### Running the Project
-
-1. **Set Up Environment Variables**:
-    Create a `.env` file in the project root and add your ngrok authentication token and Firebase URL:
-    ```env
-    RUNTIME_ENVIRONMENT=dev
-    DB_CONN_URL=https://your-firebase-db-url
-    ```
-
-2. **Run the Application**:
-    ```sh
-    python main.py
     ```
 
 ## Environment Configuration

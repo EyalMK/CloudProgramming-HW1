@@ -2,6 +2,7 @@ import base64
 import json
 import pandas as pd
 import dash
+from dash import html, dash_table
 from dash.dependencies import Input, Output, State
 
 from chatbot.chat_bot import ChatBot
@@ -83,65 +84,68 @@ class DashCallbacks:
 
             return fig_activity, fig_documents, fig_users
 
-        # Callback to upload JSONs
+        # Combined callback to handle file upload and submit
         @self.dash_app.callback(
             [Output('output-json-upload', 'children'),
-            Output('submit-button', 'disabled')],
-            [Input('upload-json', 'contents')],
-            [State('upload-json', 'filename')]
+             Output('submit-button', 'disabled'),
+             Output('submit-status', 'children')],
+            [Input('upload-json', 'contents'),
+             Input('submit-button', 'n_clicks')],
+            [State('upload-json', 'filename'),
+             State('default-data-source', 'value')]
         )
-        def handle_file_upload(contents, filename):
-            if contents is not None and filename is not None:
-                content_type, content_string = contents.split(',')
-                decoded = base64.b64decode(content_string)
+        def handle_file_upload_and_submit(contents, n_clicks, filename, default_data_source):
+            ctx = dash.callback_context
+            if not ctx.triggered:
+                return "No file uploaded.", True, ''  # Initial state
 
-                try:
-                    json_data = json.loads(decoded)
+            trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
-                    processed_filename = filename
-                    while processed_filename in self.df_handler.filters_data['uploaded-logs']:
-                        processed_filename = processed_filename.split('.json')[0] + " - Copy.json"
-
-                    data_to_store = {
-                        "fileName": processed_filename,
-                        "data": json_data
-                    }
-                    self.page_layouts.uploaded_json = data_to_store  # Store JSON data
-                    return f"{filename}", False  # Enable submit button
-                except json.JSONDecodeError:
-                    self.utils.logger.error(f"Failed to parse JSON: {filename}")
-                    return "Failed to parse JSON file.", True  # Keep submit button disabled
-
-            return "No file uploaded.", True  # Keep submit button disabled
-
-        @self.dash_app.callback(
-            Output('submit-status', 'children'),
-            [Input('submit-button', 'n_clicks')],
-            [State('upload-json', 'contents'),
-             State('default-data-source', 'value')],
-            prevent_initial_call=True
-        )
-        def handle_submit_upload(n_clicks, contents, default_data_source):
-            if n_clicks is not None and contents is not None:
-                try:
+            if trigger_id == 'upload-json':
+                if contents is not None and filename is not None:
                     content_type, content_string = contents.split(',')
                     decoded = base64.b64decode(content_string)
-                    size_kb = len(decoded) / 1024  # size in KB
 
-                    collection_name = DatabaseCollections.onshape_logs.value if default_data_source else DatabaseCollections.uploaded_logs.value
+                    try:
+                        json_data = json.loads(decoded)
 
-                    self.db_handler.write_to_database(collection_name, self.page_layouts.uploaded_json)
-                    self.utils.logger.info(f"Uploaded JSON of size: {size_kb:.2f} KB")
+                        processed_filename = filename
+                        while processed_filename in self.df_handler.filters_data['uploaded-logs']:
+                            processed_filename = processed_filename.split('.json')[0] + " - Copy.json"
 
-                    # Notify DataFrameHandler to update its state
-                    self.df_handler.update_with_new_data(collection_name)
+                        data_to_store = {
+                            "fileName": processed_filename,
+                            "data": json_data
+                        }
+                        self.page_layouts.uploaded_json = data_to_store  # Store JSON data
+                        return f"{filename}", False, ''  # Enable submit button and clear status
+                    except json.JSONDecodeError:
+                        self.utils.logger.error(f"Failed to parse JSON: {filename}")
+                        return "Failed to parse JSON file.", True, ''  # Keep submit button disabled and clear status
 
-                    return "File has been uploaded successfully."
-                except Exception as e:
-                    self.utils.logger.error(f"Error uploading JSON: {str(e)}")
-                    return f"Error: {str(e)}"
+                return "No file uploaded.", True, ''  # Keep submit button disabled and clear status
 
-            return "No data to submit."
+            elif trigger_id == 'submit-button':
+                if n_clicks is not None and contents is not None:
+                    try:
+                        content_type, content_string = contents.split(',')
+                        decoded = base64.b64decode(content_string)
+                        size_kb = len(decoded) / 1024  # size in KB
+
+                        collection_name = DatabaseCollections.onshape_logs.value if default_data_source else DatabaseCollections.uploaded_logs.value
+
+                        self.db_handler.write_to_database(collection_name, self.page_layouts.uploaded_json)
+                        self.utils.logger.info(f"Uploaded JSON of size: {size_kb:.2f} KB")
+
+                        # Notify DataFrameHandler to update its state
+                        self.df_handler.update_with_new_data(collection_name)
+
+                        return dash.no_update, dash.no_update, "File has been uploaded successfully."
+                    except Exception as e:
+                        self.utils.logger.error(f"Error uploading JSON: {str(e)}")
+                        return dash.no_update, dash.no_update, f"Error: {str(e)}"
+
+                return dash.no_update, dash.no_update, "No data to submit."
 
         # Callback to Search onShape Glossary
         @self.dash_app.callback(
@@ -154,12 +158,13 @@ class DashCallbacks:
                 results = self.search_engine.perform_search(value)
                 if results:
                     if isinstance(results, int):
-                        return f"{value} is found {results} times."
+                        data = [
+                            {"term": value, "occurrences": results}
+                        ]
+                        return self.page_layouts.search_results_table_layout(data=data)
 
-                    results_to_print = ""
-                    for key, val in results.items():
-                        results_to_print += f" {key} is found {val} times.\n\n"
-                    return results_to_print
+                    data = [{"term": key, "occurrences": val} for key, val in results.items()]
+                    return self.page_layouts.search_results_table_layout(data=data)
                 else:
                     return f"{value} is not a term in the glossary."
             return "Enter a search term and click the search button."

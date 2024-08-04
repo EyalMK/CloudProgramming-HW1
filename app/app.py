@@ -37,6 +37,12 @@ class App:
     def _setup_routes(self):
         @self.server.route('/')
         def index():
+            self.dash_app.title = "ShapeFlow Monitor"
+            return self.dash_app.index()
+
+        @self.server.route("/dash/<path>")
+        def index_per_route(path):
+            self.dash_app.title = "Title: %s" % (path)
             return self.dash_app.index()
 
         @self.server.route('/static/<path:filename>')

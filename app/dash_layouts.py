@@ -4,7 +4,7 @@ from app.dash_callbacks import DashCallbacks
 from dataframes.dataframe_handler import DataFrameHandler
 from config.constants import START_DATE, END_DATE, PROJECT_NAME, UPLOADED_LOGS_PATH, ONSHAPE_LOGS_PATH
 import dash
-from dash import dcc
+from dash import dcc, dash_table
 from dash import html
 import dash_bootstrap_components as dbc
 import pandas as pd
@@ -114,7 +114,7 @@ class DashPageLayouts:
 
     def alerts_layout(self):
         alerts_list, unread_alerts_count = self.create_alerts_list()
-        return self._create_layout("Real-time Alerts", [
+        return self._create_layout("Operations Alerts", [
             self._create_card("Recent Alerts", html.Div(id='alerts-list', children=alerts_list), 12),
             self._create_card("Acknowledge All", dbc.Button("Acknowledge All", color="success", className="w-100",
                                                             id="acknowledge-all-button"), 12),
@@ -159,6 +159,38 @@ class DashPageLayouts:
         return self._create_layout("Search OnShape Glossary", [
             self._create_card("Search", self.text_search_layout(), 10)
         ])
+
+    def search_results_table_layout(self, data):
+        return html.Div(
+            dash_table.DataTable(
+                columns=[
+                    {"name": "Term", "id": "term"},
+                    {"name": "Occurrences", "id": "occurrences"}
+                ],
+                data=data,
+                style_table={'overflowX': 'auto'},
+                style_cell={
+                    'textAlign': 'center',
+                    'padding': '10px',
+                    'backgroundColor': '#f9f9f9'  # Light shade background
+                },
+                style_header={
+                    'backgroundColor': '#e1e1e1',  # Light shade for header
+                    'fontWeight': 'bold',
+                    'textAlign': 'center'
+                },
+                style_data_conditional=[
+                    {
+                        'if': {'column_id': 'term'},
+                        'textAlign': 'center'
+                    },
+                    {
+                        'if': {'column_id': 'occurrences'},
+                        'textAlign': 'center'
+                    }
+                ]
+            )
+        )
 
     def upload_log_layout(self):
         return self._create_layout("Upload Log", [
