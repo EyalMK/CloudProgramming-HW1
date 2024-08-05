@@ -6,7 +6,8 @@
       { "pattern": "what is your name\\??", "responses": ["You can call me ShapeFlowBot.", "I go by the name ShapeFlowBot."] },
       { "pattern": "my name is (.*)", "responses": ["Nice to meet you, %1!", "Glad to meet you, %1!"] },
       { "pattern": "thank you|thanks", "responses": ["You're welcome!", "Happy to help!", "Anytime!"] },
-      { "pattern": "goodbye|bye|see you", "responses": ["Goodbye!", "See you later!", "Take care!"] }
+      { "pattern": "goodbye|bye|see you", "responses": ["Goodbye!", "See you later!", "Take care!"] },
+      { "pattern": "help|\\b(what can you do)\\b|\\b(help me)\\b", "responses": ["I can assist you with various tasks related to ShapeFlow Monitor and Onshape. Here are some things I can help you with:\n\n**ShapeFlow Monitor:**\n- Explain what ShapeFlow Monitor is and how it works.\n- Guide you on uploading logs and searching the glossary.\n- Guide you how to view and filter graphs.\n- Guide you how to view student working hours during weekends and holidays.\n\n**Onshape:**\n- Provide information about Onshape and its features.\n- Discuss Onshape's integration with other tools.\n\nYou can also search for specific topics like:\n- Cloud computing\n- Onshape features and benefits\n- ShapeFlow Monitor setup and usage\n- CAD tools and version control\n\nIf you need help with something specific, just let me know!"] }
     ],
     "cloud_patterns": [
       {
@@ -47,6 +48,7 @@
       }
     ],
     "onshape_patterns": [
+      { "pattern": "(.*\\bwhat is cad\\b.*)|\\b(CAD)\\b", "responses": ["CAD stands for Computer-Aided Design. It is the use of computer software to facilitate the creation, modification, analysis, or optimization of a design. CAD software is commonly used in various industries for creating detailed 2D drawings and 3D models. It enhances precision, productivity, and communication in design processes."]},
       { "pattern": "what is onshape\\??", "responses": ["OnShape is a cloud-based CAD platform that allows teams to collaborate on designing products in real time."] },
       { "pattern": "what (.*) onshape\\??", "responses": ["OnShape is a cloud-based CAD platform that allows teams to collaborate on designing products in real time."] },
       {
@@ -329,16 +331,16 @@
       }
     ],"shapeflow_patterns": [
     {
-      "pattern": "\\b(shapeflow monitor)\\b|\\b(shapeflow)\\b",
+      "pattern": "\\b(shapeflow monitor)\\b|\\b(shape flow monitor)\\b|\\b(shapeflow)\\b|\\b(shape flow)\\b|\\b(sfm)\\b|\\b(what is this site?)\\b|\\b(what is this app)\\b|\\b(what is this application)\\b",
       "responses": [
-        "ShapeFlow Monitor is a chatbot for Onshape that tracks activities and displays graphs.",
+        "ShapeFlow Monitor is a tool for Onshape that tracks activities and displays graphs.",
         "The ShapeFlow Monitor helps you keep track of Onshape activities with visual graphs and real-time updates."
       ]
     },
     {
       "pattern": "what is shapeflow\\??",
       "responses": [
-        "ShapeFlow is a project designed to monitor activities in Onshape and visualize them through graphs.",
+        "ShapeFlow is a tool designed to monitor activities in Onshape and visualize them through graphs.",
         "ShapeFlow allows you to track and analyze Onshape activities with intuitive graphs and reports."
       ]
     },
@@ -357,7 +359,7 @@
       ]
     },
     {
-      "pattern": "how do i set up shapeflow\\??",
+      "pattern": "how do i set up shapeflow\\??|\\b(setup)\\b|\\b(shapeflow setup)\\b|\\\\b(shapeflow monitor setup)\\\\b\"",
       "responses": [
         "To set up ShapeFlow, follow the installation guide provided with the project and configure the necessary connections with Onshape.",
         "Setting up ShapeFlow involves installing the necessary components and linking it with your Onshape account for activity tracking."
@@ -368,6 +370,49 @@
       "responses": [
         "ShapeFlow offers features such as real-time activity tracking, graphical visualization of data, and integration with other tools.",
         "The key features of ShapeFlow include activity monitoring, data analysis, and customizable graph displays."
+      ]
+    }
+  ],"shapeflow_usage_patterns": [
+    {
+      "pattern": "how do i use logs\\??|\\b(logs)\\b|\\b(what is logs)\\b",
+      "responses": [
+        "To use logs in ShapeFlow, you can import a JSON file containing the logs using upload file function and use the glossary search to find specific data.",
+        "ShapeFlow allows you to upload JSON log files using upload file function, which you can then search and analyze using the glossary and graphing tools."
+      ]
+    },
+    {
+      "pattern": "how do i upload logs\\??|\\b(upload logs)\\b|\\b(how to upload logs)\\b",
+      "responses": [
+        "You can upload logs by navigating to the 'Import Logs' section and selecting the JSON file you wish to upload.",
+        "To upload logs, click on the 'Upload' button, choose your JSON file, and confirm the upload to import the logs into ShapeFlow."
+      ]
+    },
+    {
+      "pattern": "how do i search in the glossary\\??|\\b(glossary)\\b|\\b(search in glossary)\\b|\\b(search glossary)\\b",
+      "responses": [
+        "To search in the glossary use the search glossary function , enter your query in the search bar and the relevant data from the imported logs will be displayed.",
+        "Use the glossary search feature by typing keywords related to your query, and ShapeFlow will fetch matching data from the logs."
+      ]
+    },
+    {
+      "pattern": "how do i see working hours of students during weekends nights and holidays\\??|\\b(students work hours)\\b|\\b(students hours)\\b|\\b(work hours)\\b",
+      "responses": [
+        "To view working hours of students during weekends, nights, and holidays, use the working hours function on the log data in ShapeFlow.",
+        "Use the working hours function in ShapeFlow to watch weekends, nights, and holidays working hours data."
+      ]
+    },
+    {
+      "pattern": "how do i replace a default log\\??|\\b(replace a default log)\\b|\\b(replace default log)\\b|\\b(replace log)\\b",
+      "responses": [
+        "Replace a default log by uploading a new log and setting it as the default in the log upload function",
+        "To replace a default log, import a new log file and designate it as the default checking the default data source check box."
+      ]
+    },
+    {
+      "pattern": "how do i view the new filtered graphs\\??|\\b(Graphs)\\b|\\b(view graphs)\\b|\\b(how to view graphs)\\b|\\b(how view graphs)\\b",
+      "responses": [
+        "To view new filtered graphs use the Graphs function, apply the desired filters such as document, user, log, and time range, then click 'Apply Filters'.",
+        "Use the Graphs function to set your filters, including document, user, log type, and time period, and click 'Apply' to generate the graphs."
       ]
     }
   ]

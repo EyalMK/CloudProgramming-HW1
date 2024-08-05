@@ -20,7 +20,7 @@ class ChatBot:
         if self.chat_bot:
             response = self.chat_bot.respond(user_input.lower())
             if not response:
-                return "Sorry, I don't have information on that specific topic."
+                return "Sorry, I don't have information on that specific topic. If you need help, type 'help' in the chat."
             return response
 
         self.utils.logger.error("ChatBot was not initialized properly")
