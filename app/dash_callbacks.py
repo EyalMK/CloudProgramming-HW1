@@ -35,53 +35,88 @@ class DashCallbacks:
         elif 'clear-all' in button_id and clear_all_clicks:
             return []
 
+    def _update_graph(self, data, setup_dataframe_callback, create_graph_callback, *setup_dataframe_args, collapsible_list=False):
+        df = pd.DataFrame(data)
+        filtered_df = setup_dataframe_callback(df, *setup_dataframe_args)
+        if filtered_df is None:
+            return self.page_layouts.create_empty_graph()
+        if collapsible_list:
+            collapsible_list_component = self.page_layouts.create_collapsible_list(filtered_df)
+            return create_graph_callback(dataframe=filtered_df), collapsible_list_component
+        return create_graph_callback(dataframe=filtered_df)
+
     def register_callbacks(self):
         # Callback to update graphs
         @self.dash_app.callback(
-            [Output('activity-over-time', 'figure'),
-             Output('document-usage-frequency', 'figure'),
-             Output('user-activity-distribution', 'figure')],
+            [Output('action-frequency-scatter-graph', 'figure'),
+             Output('work-patterns-over-time-graph', 'figure'),
+             Output('project-time-distribution-graph', 'figure'),
+             Output('advanced-basic-actions-graph', 'figure'),
+             Output('repeated-actions-by-user-graph', 'figure'),
+             Output('grouped-actions-div', 'children'),
+             Output('data-source-title', 'children')],
             [Input('apply-filters', 'n_clicks')],
-            [dash.dependencies.State('document-dropdown', 'value'),
+            [State('processed-df', 'data'),
+             dash.dependencies.State('document-dropdown', 'value'),
+             dash.dependencies.State('logs-dropdown', 'value'),
              dash.dependencies.State('user-dropdown', 'value'),
-             dash.dependencies.State('description-dropdown', 'value'),
-             dash.dependencies.State('date-picker-range', 'start_date'),
-             dash.dependencies.State('date-picker-range', 'end_date')]
+             dash.dependencies.State('start-time', 'value'),
+             dash.dependencies.State('end-time', 'value')]
         )
-        def update_graphs(n_clicks: int, selected_document: str, selected_user: str, selected_description: str, start_date: str, end_date: str):
-            filtered_df = self.df_handler.df.copy()
+        def update_all_graphs(n_clicks, data, selected_document, selected_log, selected_user, start_time, end_time):
+            dataframe = pd.DataFrame(data)
+            filtered_df = self.df_handler.filter_dataframe_for_graphs(dataframe, selected_document, selected_user, start_time, end_time)
 
-            if selected_document:
-                filtered_df = filtered_df[filtered_df['Document'] == selected_document]
+            ctx = dash.callback_context
+            if not ctx.triggered:
+                return [dash.no_update] * 7
+            else:
+                input_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
-            if selected_user:
-                filtered_df = filtered_df[filtered_df['User'] == selected_user]
+            fig_action_frequency = fig_work_patterns = fig_project_time = fig_repeated_actions = fig_advanced_basics_actions = self.page_layouts.create_empty_graph()
+            collapsible_list = "No data available"
 
-            if selected_description:
-                filtered_df = filtered_df[filtered_df['Description'] == selected_description]
+            if input_id == 'apply-filters':
+                fig_action_frequency = self._update_graph(
+                    filtered_df,
+                    self.df_handler.setup_action_frequency_scatter_graph_dataframe,
+                    self.page_layouts.create_action_frequency_scatter_graph,
+                    start_time,
+                    end_time
+                )
+                fig_work_patterns = self._update_graph(
+                    filtered_df,
+                    self.df_handler.setup_work_patterns_over_time_graph_dataframe,
+                    self.page_layouts.create_work_patterns_over_time_graph
+                )
+                fig_project_time = self._update_graph(
+                    filtered_df,
+                    self.df_handler.setup_project_time_distribution_graph_dataframe,
+                    self.page_layouts.create_project_time_distribution_graph
+                )
+                fig_repeated_actions, collapsible_list = self._update_graph(
+                    filtered_df,
+                    self.df_handler.setup_repeated_actions_by_user_graph_dataframe,
+                    self.page_layouts.create_repeated_actions_graph,
+                    collapsible_list=True,
+                )
+                fig_advanced_basics_actions = self._update_graph(
+                    filtered_df,
+                    self.df_handler.setup_advanced_basic_actions_graph_dataframe,
+                    self.page_layouts.create_advanced_basic_actions_graph
+                )
 
-            if start_date and end_date:
-                start_date = pd.to_datetime(start_date)
-                end_date = pd.to_datetime(end_date)
-                filtered_df['Date'] = pd.to_datetime(filtered_df['Date'])
-                filtered_df = filtered_df[(filtered_df['Date'] >= start_date) & (filtered_df['Date'] <= end_date)]
+            # Update the data source title if filters are applied
+            new_data_source_title = selected_log if selected_log else self.page_layouts.data_source_title
+            data_source_title = f"Current Data Source - {new_data_source_title}"
 
-            # Group by date and count activities
-            activity_over_time = filtered_df.groupby('Date').size().reset_index(name='ActivityCount')
-
-            # Group by document and count usage
-            document_usage = filtered_df['Document'].value_counts().reset_index(name='UsageCount')
-            document_usage.columns = ['Document', 'UsageCount']
-
-            # Group by user and count activities
-            user_activity = filtered_df['User'].value_counts().reset_index(name='ActivityCount')
-            user_activity.columns = ['User', 'ActivityCount']
-
-            fig_activity = self.page_layouts._create_line_chart(activity_over_time, 'Date', 'ActivityCount', 'Activity Over Time')
-            fig_documents = self.page_layouts._create_bar_chart(document_usage, 'Document', 'UsageCount', 'Document Usage Frequency')
-            fig_users = self.page_layouts._create_pie_chart(user_activity, 'User', 'ActivityCount', 'User Activity Distribution')
-
-            return fig_activity, fig_documents, fig_users
+            return fig_action_frequency,\
+                fig_work_patterns,\
+                fig_project_time,\
+                fig_advanced_basics_actions,\
+                fig_repeated_actions,\
+                collapsible_list,\
+                data_source_title
 
         # Combined callback to handle file upload and submit
         @self.dash_app.callback(
@@ -213,8 +248,6 @@ class DashCallbacks:
                 return ''
             return dash.no_update
 
-
-
         @self.dash_app.callback(
             Output('document-dropdown', 'value'),
             [Input('select-all-documents', 'n_clicks'),
@@ -250,116 +283,6 @@ class DashCallbacks:
         )
         def update_graphs_selection(select_all_clicks, clear_all_clicks, options):
             return self._update_selection(select_all_clicks, clear_all_clicks, options)
-
-        # 1. Project Time Distribution Graph
-        @self.dash_app.callback(
-            Output('project-time-distribution-graph', 'figure'),
-            Input('project-time-distribution-graph', 'id'),
-            State('processed-df', 'data')
-        )
-        def update_project_time_distribution_graph(_, data):
-            df = pd.DataFrame(data)
-
-            if 'Time' not in df.columns or 'Tab' not in df.columns:
-                return self.page_layouts.create_empty_graph()
-
-            df['Time'] = pd.to_datetime(df['Time'], errors='coerce')
-            df = df.dropna(subset=['Time'])
-
-            df_sorted = df.sort_values(by=['Tab', 'Time'])
-            df_sorted['Time Diff'] = df_sorted.groupby('Tab')['Time'].diff().dt.total_seconds()
-
-            filtered_df = df_sorted.dropna(subset=['Time Diff'])
-            filtered_df = filtered_df[filtered_df['Time Diff'] > 0]
-            filtered_df = filtered_df[filtered_df['Time Diff'] <= 1800]
-
-            if filtered_df.empty:
-                return self.page_layouts.create_empty_graph()
-
-            project_time = filtered_df.groupby('Tab')['Time Diff'].sum().reset_index(name='Time Spent (seconds)')
-            project_time['Time Spent (hours)'] = (project_time['Time Spent (seconds)'] / 3600).round(2)
-
-            return self.page_layouts.create_piechart_time_dist(dataframe=project_time)
-
-        # 2. Advanced vs. Basic Actions (Grouped Bar Chart)
-        @self.dash_app.callback(
-            Output('advanced-basic-actions-graph', 'figure'),
-            Input('advanced-basic-actions-graph', 'id'),
-            State('processed-df', 'data')
-        )
-        def update_advanced_basic_actions_graph(_, data):
-            df = pd.DataFrame(data)
-
-            if 'User' not in df.columns or 'Action Type' not in df.columns:
-                return self.page_layouts.create_empty_graph()
-
-            action_data = df.groupby(['User', 'Action Type']).size().reset_index(name='Action Count')
-            return self.page_layouts.create_advanced_basic_actions_graph(dataframe=action_data)
-
-        # 3. Action Frequency by User (Scatter Plot with DatePickerRange)
-        @self.dash_app.callback(
-            Output('action-frequency-scatter-graph', 'figure'),
-            [Input('date-picker-range-action-frequency-scatter', 'start_date'),
-             Input('date-picker-range-action-frequency-scatter', 'end_date')],
-            State('processed-df', 'data')
-        )
-        def update_action_frequency_scatter_graph(start_date, end_date, data):
-            df = pd.DataFrame(data)
-
-            if 'Time' not in df.columns or 'User' not in df.columns:
-                return self.page_layouts.create_empty_graph()
-
-            df['Time'] = pd.to_datetime(df['Time'], errors='coerce')
-            start_date = pd.to_datetime(start_date)
-            end_date = pd.to_datetime(end_date)
-
-            filtered_df = df[(df['Time'] >= start_date) & (df['Time'] <= end_date)]
-            return self.page_layouts.create_action_frequency_scatter_graph(dataframe=filtered_df)
-
-        # 4. Work Patterns Over Different Time Intervals (Bar Chart)
-        @self.dash_app.callback(
-            Output('work-patterns-over-time-graph', 'figure'),
-            Input('work-patterns-over-time-graph', 'id'),
-            State('processed-df', 'data')
-        )
-        def update_work_patterns_over_time_graph(_, data):
-            df = pd.DataFrame(data)
-
-            if 'Time' not in df.columns:
-                return self.page_layouts.create_empty_graph()
-
-            df['Time'] = pd.to_datetime(df['Time'], errors='coerce')
-            df = df.dropna(subset=['Time'])
-
-            work_patterns = df.groupby(
-                [df['Time'].dt.day_name().rename('Day'), df['Time'].dt.hour.rename('Hour')]
-            ).size().reset_index(name='Action Count')
-
-            work_patterns['Time Interval'] = work_patterns['Hour'].astype(str) + ":00 - " + (
-                    work_patterns['Hour'] + 1).astype(str) + ":00"
-
-            return self.page_layouts.create_work_patterns_over_time_graph(dataframe=work_patterns)
-
-        # 5. Repeated Actions Frequencies Graph
-        @self.dash_app.callback(
-            [Output('repeated-actions-by-user-graph', 'figure'),
-             Output('grouped-actions-div', 'children')],
-            Input('repeated-actions-by-user-graph', 'id'),
-            State('pre-processed-df', 'data')
-        )
-        def update_repeated_actions_by_user_graph(_, data):
-            df = pd.DataFrame(data)
-
-            if 'User' not in df.columns or 'Time' not in df.columns:
-                return self.page_layouts.create_empty_graph(), "No data available"
-
-            df = df.sort_values(by=['User', 'Time'])
-            grouped_actions = df.groupby(['Action', 'User', 'Description']).size().reset_index(name='Count')
-
-            figure = self.page_layouts.create_repeated_actions_graph(dataframe=grouped_actions)
-            collapsible_list = self.page_layouts.create_collapsible_list(grouped_actions)
-
-            return figure, collapsible_list
 
         # Callbacks for dynamic content
         @self.dash_app.callback(

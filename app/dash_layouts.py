@@ -55,45 +55,29 @@ class DashPageLayouts:
         ])
 
     def graphs_layout(self):
-        self.data_source_title = "Default Log" if self.df_handler.selected_log_path == ONSHAPE_LOGS_PATH \
-            else "Selected Uploaded Log"
+        self.data_source_title = "Default Log" if self.df_handler.selected_log_path == ONSHAPE_LOGS_PATH else "Selected Uploaded Log"
         preprocessed_df = self.df_handler.get_preprocessed_graphs_dataframe()
         processed_df = self.df_handler.process_graphs_layout_dataframe(dataframe=preprocessed_df)
         max_date, min_date, default_start_date = self.df_handler.get_max_min_dates(dataframe=processed_df)
         return self._create_layout("Advanced Team Activity and Analysis Graphs", [
-            html.H4(f"Current Data Source - {self.data_source_title}", className="mb-4"),
+            html.H4(id='data-source-title', children=f"Current Data Source - {self.data_source_title}",
+                    className="mb-4"),
             self._create_card("Filters", self._create_filters(), 12),
             dcc.Store(id='processed-df', data=processed_df.to_dict()),
             dcc.Store(id='pre-processed-df', data=preprocessed_df.to_dict()),
             dcc.Tabs([
-                # 1. Project Time Distribution
                 dcc.Tab(label='Project Time Distribution', children=[
                     dcc.Graph(id='project-time-distribution-graph')
                 ]),
-
-                # 2. Advanced vs. Basic Actions
                 dcc.Tab(label='Advanced vs. Basic Actions', children=[
                     dcc.Graph(id='advanced-basic-actions-graph')
                 ]),
-
-                # 3. Action Frequency by User (Scatter Plot with DatePickerRange)
                 dcc.Tab(label='Action Frequency by User', children=[
-                    dcc.DatePickerRange(
-                        id='date-picker-range-action-frequency-scatter',
-                        start_date=default_start_date,
-                        end_date=max_date,
-                        min_date_allowed=min_date,
-                        max_date_allowed=max_date,
-                        display_format='YYYY-MM-DD'
-                    ),
                     dcc.Graph(id='action-frequency-scatter-graph')
                 ]),
-
-                # 4. Work Patterns Over Different Time Intervals
                 dcc.Tab(label='Work Patterns Over Time', children=[
                     dcc.Graph(id='work-patterns-over-time-graph')
                 ]),
-
                 dcc.Tab(label='Repeated Actions By User', children=[
                     dcc.Graph(id='repeated-actions-by-user-graph'),
                     html.H2('Grouped Actions Descriptions:'),
@@ -262,7 +246,7 @@ class DashPageLayouts:
     def create_empty_graph(self):
         return go.Figure()
 
-    def create_piechart_time_dist(self, dataframe):
+    def create_project_time_distribution_graph(self, dataframe):
         return self._create_pie_chart(df=dataframe,
                                       names='Tab',
                                       values='Time Spent (hours)',
@@ -410,10 +394,16 @@ class DashPageLayouts:
                                     'select-all-documents', 'clear-all-documents'),
             self._create_filter_row('user-dropdown', 'Select User', self.df_handler.filters_data['users'],
                                     'select-all-users', 'clear-all-users'),
-            self._create_filter_row('logs-dropdown', 'Select Log', self.df_handler.filters_data['uploaded-logs'],
-                                    'select-all-logs', 'clear-all-logs', default_value=default_log_value),
             self._create_filter_row('graphs-dropdown', 'Select Graphs', self.df_handler.filters_data['graphs'],
                                     'select-all-graphs', 'clear-all-graphs'),
+            dbc.Row([
+                dbc.Col(
+                    dcc.Dropdown(id='logs-dropdown',
+                                 options=self.df_handler.filters_data['uploaded-logs'],
+                                 placeholder='Select Log',
+                                 value=self.df_handler.filters_data['uploaded-logs'][0]),
+                    width=7)
+            ], className="mb-3"),
             dbc.Row([
                 dbc.Col(html.Div([
                     html.Label("Start Time"),

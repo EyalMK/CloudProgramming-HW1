@@ -104,6 +104,88 @@ class DataFrameHandler:
             start_date = max_date - timedelta(days=7)
         return max_date, min_date, start_date
 
+    def filter_dataframe_for_graphs(self, dataframe, selected_document, selected_user, start_date, end_date):
+        filtered_df = dataframe
+
+        if selected_document:
+            if isinstance(selected_document, list):
+                filtered_df = filtered_df[filtered_df['Document'].isin(selected_document)]
+            else:
+                filtered_df = filtered_df[filtered_df['Document'] == selected_document]
+
+        if selected_user:
+            if isinstance(selected_user, list):
+                filtered_df = filtered_df[filtered_df['User'].isin(selected_user)]
+            else:
+                filtered_df = filtered_df[filtered_df['User'] == selected_user]
+
+        if start_date and end_date:
+            filtered_df['Date'] = pd.to_datetime(filtered_df['Date'], errors='coerce')
+            start_date = pd.to_datetime(start_date)
+            end_date = pd.to_datetime(end_date)
+            filtered_df = filtered_df[(filtered_df['Date'] >= start_date) & (filtered_df['Date'] <= end_date)]
+
+        # Group by date and count activities
+        return filtered_df
+
+    def setup_project_time_distribution_graph_dataframe(self, dataframe):
+        if 'Time' not in dataframe.columns or 'Tab' not in dataframe.columns:
+            return None
+
+        dataframe['Time'] = pd.to_datetime(dataframe['Time'], errors='coerce')
+        df = dataframe.dropna(subset=['Time'])
+
+        df_sorted = df.sort_values(by=['Tab', 'Time'])
+        df_sorted['Time Diff'] = df_sorted.groupby('Tab')['Time'].diff().dt.total_seconds()
+
+        filtered_df = df_sorted.dropna(subset=['Time Diff'])
+        filtered_df = filtered_df[filtered_df['Time Diff'] > 0]
+        filtered_df = filtered_df[filtered_df['Time Diff'] <= 1800]
+
+        if filtered_df.empty:
+            return None
+
+        project_time = filtered_df.groupby('Tab')['Time Diff'].sum().reset_index(name='Time Spent (seconds)')
+        project_time['Time Spent (hours)'] = (project_time['Time Spent (seconds)'] / 3600).round(2)
+
+        return project_time
+
+    def setup_advanced_basic_actions_graph_dataframe(self, dataframe):
+        if 'User' not in dataframe.columns or 'Action Type' not in dataframe.columns:
+            return None
+        return dataframe.groupby(['User', 'Action Type']).size().reset_index(name='Action Count')
+
+    def setup_action_frequency_scatter_graph_dataframe(self, dataframe, start_date, end_date):
+        if 'Time' not in dataframe.columns or 'User' not in dataframe.columns:
+            return None
+
+        dataframe['Time'] = pd.to_datetime(dataframe['Time'], errors='coerce')
+        start_date = pd.to_datetime(start_date)
+        end_date = pd.to_datetime(end_date)
+
+        return dataframe[(dataframe['Time'] >= start_date) & (dataframe['Time'] <= end_date)]
+
+    def setup_work_patterns_over_time_graph_dataframe(self, dataframe):
+        if 'Time' not in dataframe.columns:
+            return None
+
+        dataframe['Time'] = pd.to_datetime(dataframe['Time'], errors='coerce')
+        df = dataframe.dropna(subset=['Time'])
+
+        work_patterns = df.groupby(
+            [df['Time'].dt.day_name().rename('Day'), df['Time'].dt.hour.rename('Hour')]
+        ).size().reset_index(name='Action Count')
+
+        work_patterns['Time Interval'] = work_patterns['Hour'].astype(str) + ":00 - " + (
+                work_patterns['Hour'] + 1).astype(str) + ":00"
+        return work_patterns
+
+    def setup_repeated_actions_by_user_graph_dataframe(self, dataframe):
+        if 'User' not in dataframe.columns or 'Time' not in dataframe.columns:
+            return None
+        df = dataframe.sort_values(by=['User', 'Time'])
+        return df.groupby(['Action', 'User', 'Description']).size().reset_index(name='Count')
+
     def _dataframes_from_data(self, data, collection_source=ONSHAPE_LOGS_PATH):
         self.selected_log_path = collection_source
         first_key = next(iter(data))
