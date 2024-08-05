@@ -1,8 +1,9 @@
-### Constants and Enums
+# Constants and Enums
 import os
 from datetime import datetime, date, timedelta
 from enum import Enum
 
+# General Constants
 PROJECT_NAME = "ShapeFlow Monitor"
 PORT = 8050
 FONT_AWESOME_CDN = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
@@ -12,26 +13,55 @@ START_DATE = DEFAULT_MIN_DATE = date(2022, 4, 21).strftime('%d-%m-%Y')
 END_DATE = DEFAULT_MAX_DATE = datetime.now().strftime('%d-%m-%Y')
 
 
+# Enums
 class RuntimeEnvironments(Enum):
-    dev = "dev"
-    prod = "prod"
-    test = "test"
+    DEV = "DEV"
+    PROD = "PROD"
+    TEST = "TEST"
 
 
 class DatabaseCollections(Enum):
-    onshape_logs = "/onShapeLogs"
-    uploaded_logs = "/uploaded-jsons"
-    glossary_words = "/base-glossary-words"
-    indices_words = "/indices-words"
-    bot_prompts = "/chatbot-patterns"
+    ONSHAPE_LOGS = "/onShapeLogs"
+    UPLOADED_LOGS = "/uploaded-jsons"
+    GLOSSARY_WORDS = "/base-glossary-words"
+    INDICES_WORDS = "/indices-words"
+    BOT_PROMPTS = "/chatbot-patterns"
 
 
-ONSHAPE_LOGS_PATH = DatabaseCollections.onshape_logs.value
-UPLOADED_LOGS_PATH = DatabaseCollections.uploaded_logs.value
-GLOSSARY_WORDS_PATH = DatabaseCollections.glossary_words.value
+# Database Paths
+ONSHAPE_LOGS_PATH = DatabaseCollections.ONSHAPE_LOGS.value
+UPLOADED_LOGS_PATH = DatabaseCollections.UPLOADED_LOGS.value
+GLOSSARY_WORDS_PATH = DatabaseCollections.GLOSSARY_WORDS.value
+
+# Action Map
+ACTION_MAP = {
+    'undo': 'Undo',
+    'redo': 'Redo',
+    'insert': 'Insert',
+    'export': 'Export',
+    'edit': 'Edit',
+    'commit': 'Commit',
+    'add': 'Add',
+    'close': 'Close',
+    'move': 'Move',
+    'open': 'Open'
+}
+
 
 # Todo: refactor and import from .env.development/.env.testing
-os.environ["NGROK_TOKEN"] = "2jBnTrvBD8DEzmYA1Bxx69uBXHH_84Fgk6CD5LHc9Cos4DdGh"
-os.environ["ALERT_TIMEWINDOW"] = "1h"
-os.environ["UNDO_REDO_THRESHOLD"] = "15"
-runtime_environment = os.environ["RUNTIME_ENVIRONMENT"] = RuntimeEnvironments.dev.value
+# Environment Configuration
+def load_environment_config():
+    """
+    Loads and sets environment-specific configurations.
+    """
+    os.environ["NGROK_TOKEN"] = "2jBnTrvBD8DEzmYA1Bxx69uBXHH_84Fgk6CD5LHc9Cos4DdGh"
+    os.environ["ALERT_TIMEWINDOW"] = "1h"
+    os.environ["UNDO_REDO_THRESHOLD"] = "15"
+
+    runtime_env = os.environ.get("RUNTIME_ENVIRONMENT", RuntimeEnvironments.DEV.value)
+    os.environ["RUNTIME_ENVIRONMENT"] = runtime_env
+
+    return RuntimeEnvironments(runtime_env)
+
+
+runtime_environment = load_environment_config()
