@@ -168,14 +168,14 @@ class DataFrameHandler:
 
     def _undo_redo_activity_detection(self):
         # Filter redo and undo actions
-        redo_undo_df = self.raw_df[self.raw_df['Description'].str.contains('Undo|Redo', case=False)]
+        redo_undo_df = self.raw_df[self.raw_df['Description'].str.contains('Undo|Redo', case=False)].copy()
 
         # Set a time window for detecting high frequency of actions
         redo_undo_df['TimeWindow'] = redo_undo_df['Time'].dt.floor(os.environ["ALERT_TIMEWINDOW"])
         grouped = redo_undo_df.groupby(['User', 'Document', 'TimeWindow']).size().reset_index(name='Count')
 
         # Filter the groups that exceed the threshold
-        alerts = grouped[grouped['Count'] > int(os.environ["UNDO_REDO_THRESHOLD"])]
+        alerts = grouped[grouped['Count'] > int(os.environ["UNDO_REDO_THRESHOLD"])].copy()
 
         # Prepare the alerts DataFrame
         if not alerts.empty:
@@ -185,6 +185,7 @@ class DataFrameHandler:
             self.alerts_df = alerts[['Time', 'User', 'Description', 'Document', 'Status']]
         else:
             self.alerts_df = pd.DataFrame(columns=['Time', 'User', 'Description', 'Document', 'Status'])
+
 
     def _generate_alerts_df(self):
         self._undo_redo_activity_detection()
