@@ -327,6 +327,49 @@
           "Onshape supports automotive design with features that streamline workflows and improve team collaboration."
         ]
       }
-    ]
+    ],"shapeflow_patterns": [
+    {
+      "pattern": "\\b(shapeflow monitor)\\b|\\b(shapeflow)\\b",
+      "responses": [
+        "ShapeFlow Monitor is a chatbot for Onshape that tracks activities and displays graphs.",
+        "The ShapeFlow Monitor helps you keep track of Onshape activities with visual graphs and real-time updates."
+      ]
+    },
+    {
+      "pattern": "what is shapeflow\\??",
+      "responses": [
+        "ShapeFlow is a project designed to monitor activities in Onshape and visualize them through graphs.",
+        "ShapeFlow allows you to track and analyze Onshape activities with intuitive graphs and reports."
+      ]
+    },
+    {
+      "pattern": "how does shapeflow work\\??",
+      "responses": [
+        "ShapeFlow integrates with Onshape to monitor activities and generate graphical reports, providing insights into your design workflow.",
+        "The ShapeFlow Monitor collects data from Onshape activities and visualizes them in easy-to-understand graphs."
+      ]
+    },
+    {
+      "pattern": "can shapeflow be integrated with other tools\\??",
+      "responses": [
+        "Yes, ShapeFlow can be integrated with various tools to enhance its functionality and provide comprehensive activity tracking.",
+        "ShapeFlow supports integration with third-party tools, allowing for extended capabilities and seamless workflows."
+      ]
+    },
+    {
+      "pattern": "how do i set up shapeflow\\??",
+      "responses": [
+        "To set up ShapeFlow, follow the installation guide provided with the project and configure the necessary connections with Onshape.",
+        "Setting up ShapeFlow involves installing the necessary components and linking it with your Onshape account for activity tracking."
+      ]
+    },
+    {
+      "pattern": "what features does shapeflow offer\\??",
+      "responses": [
+        "ShapeFlow offers features such as real-time activity tracking, graphical visualization of data, and integration with other tools.",
+        "The key features of ShapeFlow include activity monitoring, data analysis, and customizable graph displays."
+      ]
+    }
+  ]
   }
 }
