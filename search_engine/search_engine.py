@@ -27,7 +27,7 @@ class SearchEngine:
 
     def _initialize_base_words(self):
         try:
-            data = self.db_handler.read_from_database(DatabaseCollections.glossary_words.value)
+            data = self.db_handler.read_from_database(DatabaseCollections.GLOSSARY_WORDS.value)
             if data:
                 self.chosen_words = data
         except Exception as e:
@@ -82,7 +82,7 @@ class SearchEngine:
         if self.glossary_soap is None:
             return
 
-        indices = self.db_handler.read_from_database(DatabaseCollections.indices_words.value)
+        indices = self.db_handler.read_from_database(DatabaseCollections.INDICES_WORDS.value)
         if indices:
             for key in indices:
                 self.indices = indices[key]
@@ -90,6 +90,6 @@ class SearchEngine:
         else:
             self.indices = self._index_words(self.glossary_soap)
             self._remove_stop_words()
-            self.db_handler.write_to_database(DatabaseCollections.indices_words.value, self.indices)
+            self.db_handler.write_to_database(DatabaseCollections.INDICES_WORDS.value, self.indices)
 
         self.stemmed_indices = self._apply_stemming()
