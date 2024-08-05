@@ -12,7 +12,8 @@ from utils.utilities import Utilities
 
 
 class DashCallbacks:
-    def __init__(self, dash_app: dash.Dash, df_handler: DataFrameHandler, db_handler: 'DatabaseHandler', page_layouts: 'DashPageLayouts', utils: Utilities):
+    def __init__(self, dash_app: dash.Dash, df_handler: DataFrameHandler, db_handler: 'DatabaseHandler',
+                 page_layouts: 'DashPageLayouts', utils: Utilities):
         self.dash_app = dash_app
         self.df_handler = df_handler
         self.db_handler = db_handler
@@ -35,7 +36,8 @@ class DashCallbacks:
         elif 'clear-all' in button_id and clear_all_clicks:
             return []
 
-    def _update_graph(self, data, setup_dataframe_callback, create_graph_callback, *setup_dataframe_args, collapsible_list=False):
+    def _update_graph(self, data, setup_dataframe_callback, create_graph_callback, *setup_dataframe_args,
+                      collapsible_list=False):
         df = pd.DataFrame(data)
         filtered_df = setup_dataframe_callback(df, *setup_dataframe_args)
         if filtered_df is None:
@@ -54,18 +56,37 @@ class DashCallbacks:
              Output('advanced-basic-actions-graph', 'figure'),
              Output('repeated-actions-by-user-graph', 'figure'),
              Output('grouped-actions-div', 'children'),
-             Output('data-source-title', 'children')],
+             Output('data-source-title', 'children'),
+             Output('alerts-count-badge', 'children', allow_duplicate=True)],
             [Input('apply-filters', 'n_clicks')],
             [State('processed-df', 'data'),
              dash.dependencies.State('document-dropdown', 'value'),
              dash.dependencies.State('logs-dropdown', 'value'),
              dash.dependencies.State('user-dropdown', 'value'),
              dash.dependencies.State('start-time', 'value'),
-             dash.dependencies.State('end-time', 'value')]
+             dash.dependencies.State('end-time', 'value')],
+            prevent_initial_call='initial_duplicate'
         )
         def update_all_graphs(n_clicks, data, selected_document, selected_log, selected_user, start_time, end_time):
             dataframe = pd.DataFrame(data)
-            filtered_df = self.df_handler.filter_dataframe_for_graphs(dataframe, selected_document, selected_user, start_time, end_time)
+
+            # If a log is selected, update dataframe handler attributes with the new log data
+            # And then update processed-df and pre-processed-df attributes in the graphs_layout
+            if selected_log:
+                is_default_source = selected_log.lower() == 'default log'
+                collection_data = self.db_handler.read_from_database(
+                    DatabaseCollections.ONSHAPE_LOGS.value if is_default_source else DatabaseCollections.UPLOADED_LOGS.value)
+                if collection_data is None:
+                    self.utils.logger.error(f"No log data available for selected log: {selected_log}")
+                    return [dash.no_update] * 7
+                self.df_handler.handle_switch_log_source(collection_data, file_name=selected_log)
+                dataframe, _ = self.page_layouts.handle_initial_graph_dataframes()
+
+            filtered_df = self.df_handler.filter_dataframe_for_graphs(dataframe, selected_document, selected_log,
+                                                                      selected_user, start_time, end_time)
+
+            if filtered_df is None:
+                return [dash.no_update] * 7
 
             ctx = dash.callback_context
             if not ctx.triggered:
@@ -110,13 +131,14 @@ class DashCallbacks:
             new_data_source_title = selected_log if selected_log else self.page_layouts.data_source_title
             data_source_title = f"Current Data Source - {new_data_source_title}"
 
-            return fig_action_frequency,\
-                fig_work_patterns,\
-                fig_project_time,\
-                fig_advanced_basics_actions,\
-                fig_repeated_actions,\
-                collapsible_list,\
-                data_source_title
+            return fig_action_frequency, \
+                fig_work_patterns, \
+                fig_project_time, \
+                fig_advanced_basics_actions, \
+                fig_repeated_actions, \
+                collapsible_list, \
+                data_source_title, \
+                str(self.df_handler.get_unread_alerts_count())
 
         # Combined callback to handle file upload and submit
         @self.dash_app.callback(
@@ -178,13 +200,13 @@ class DashCallbacks:
                         # Notify DataFrameHandler to update its state
                         self.df_handler.update_with_new_data(collection_name)
 
-                        return dash.no_update, dash.no_update, "File has been uploaded successfully.", str(self.df_handler.get_unread_alerts_count())
+                        return dash.no_update, dash.no_update, "File has been uploaded successfully.", str(
+                            self.df_handler.get_unread_alerts_count())
                     except Exception as e:
                         self.utils.logger.error(f"Error uploading JSON: {str(e)}")
                         return dash.no_update, dash.no_update, f"Error: {str(e)}", dash.no_update
 
                 return dash.no_update, dash.no_update, "No data to submit.", dash.no_update
-
 
         # Callback to Search onShape Glossary
         @self.dash_app.callback(
@@ -238,7 +260,6 @@ class DashCallbacks:
             response = self.chat_bot.respond(user_input)
             new_history = f"{chat_history}\n\nYou: {user_input}\n\nShapeFlowBot: {response}"
             return new_history
-
 
         @self.dash_app.callback(
             Output('chat-input', 'value'),

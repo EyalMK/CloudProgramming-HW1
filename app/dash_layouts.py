@@ -17,6 +17,8 @@ class DashPageLayouts:
         self.dash_app = dash_app
         self.db_handler = db_handler
         self.df_handler = DataFrameHandler(db_handler, utils)
+        self.lightly_refined_df = pd.DataFrame([])
+        self.graph_processed_df = pd.DataFrame([])
         self.uploaded_json = None
         self.data_source_title = "Default Log"
         self.utils = utils
@@ -54,16 +56,13 @@ class DashPageLayouts:
         ])
 
     def graphs_layout(self):
-        self.data_source_title = "Default Log" if self.df_handler.selected_log_path == ONSHAPE_LOGS_PATH else "Selected Uploaded Log"
-        preprocessed_df = self.df_handler.get_preprocessed_graphs_dataframe()
-        processed_df = self.df_handler.process_graphs_layout_dataframe(dataframe=preprocessed_df)
-        max_date, min_date, default_start_date = self.df_handler.get_max_min_dates(dataframe=processed_df)
+        _, _ = self.handle_initial_graph_dataframes()
         return self._create_layout("Advanced Team Activity and Analysis Graphs", [
             html.H4(id='data-source-title', children=f"Current Data Source - {self.data_source_title}",
                     className="mb-4"),
             self._create_card("Filters", self._create_filters(), 12),
-            dcc.Store(id='processed-df', data=processed_df.to_dict()),
-            dcc.Store(id='pre-processed-df', data=preprocessed_df.to_dict()),
+            dcc.Store(id='processed-df', data=self.graph_processed_df.to_dict()),
+            dcc.Store(id='pre-processed-df', data=self.lightly_refined_df.to_dict()),
             dcc.Tabs([
                 dcc.Tab(label='Project Time Distribution', children=[
                     dcc.Graph(id='project-time-distribution-graph')
@@ -246,11 +245,13 @@ class DashPageLayouts:
         return go.Figure()
 
     def create_project_time_distribution_graph(self, dataframe):
+        threshold_percentage = 0.4
         return self._create_pie_chart(df=dataframe,
                                       names='Tab',
                                       values='Time Spent (hours)',
-                                      title='Project Time Distribution (in Hours)',
-                                      labels={'Time Spent (hours)': 'Time Spent (Hours)', 'Tab': 'Project Tab'})
+                                      title=f'Project Time Distribution (in Hours) - Minimum threshold: {threshold_percentage}%',
+                                      labels={'Time Spent (hours)': 'Time Spent (Hours)', 'Tab': 'Project Tab'},
+                                      threshold_percentage=threshold_percentage)
 
     def create_repeated_actions_graph(self, dataframe):
         return self._create_stacked_bar_chart(df=dataframe,
@@ -290,6 +291,11 @@ class DashPageLayouts:
                                               title='Work Patterns Over Different Time Intervals',
                                               labels={'Time Interval': 'Time of Day', 'Action Count': 'Action Count',
                                                       'Day': 'Day of Week'})
+
+    def handle_initial_graph_dataframes(self):
+        self.lightly_refined_df = self.df_handler.get_lightly_refined_graphs_dataframe()
+        self.graph_processed_df = self.df_handler.process_graphs_layout_dataframe(dataframe=self.lightly_refined_df)
+        return self.graph_processed_df, self.lightly_refined_df
 
     def create_header(self):
         current_date = datetime.now().strftime('%d-%m-%Y')
@@ -545,12 +551,23 @@ class DashPageLayouts:
 
         return px.scatter(**scatter_chart_params)
 
-    def _create_pie_chart(self, df: pd.DataFrame, names: str, values: str, title: str, labels=None) -> px.pie:
+    def _create_pie_chart(self, df: pd.DataFrame, names: str, values: str, title: str, labels=None, threshold_percentage=0.0) -> px.pie:
         # Validate the graph data by passing df and the columns to _validate_graph_data
         df, validated_columns = self._validate_graph_data(df, names, values)
         names, values = validated_columns  # Unpack the validated columns
 
         # If the DataFrame is empty after validation, return an empty pie chart with just the title
+        if df.empty:
+            return px.pie(title=title)
+
+        # Calculate the total and the percentage for each slice
+        total = df[values].sum()
+        df['percentage'] = (df[values] / total) * 100
+
+        # Filter the DataFrame to only include slices above the threshold percentage
+        df = df[df['percentage'] >= threshold_percentage]
+
+        # If the DataFrame is empty after filtering, return an empty pie chart with just the title
         if df.empty:
             return px.pie(title=title)
 
