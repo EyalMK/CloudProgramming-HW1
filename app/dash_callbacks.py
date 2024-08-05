@@ -75,7 +75,7 @@ class DashCallbacks:
             if selected_log:
                 is_default_source = selected_log.lower() == 'default log'
                 collection_data = self.db_handler.read_from_database(
-                    DatabaseCollections.onshape_logs.value if is_default_source else DatabaseCollections.uploaded_logs.value)
+                    DatabaseCollections.ONSHAPE_LOGS.value if is_default_source else DatabaseCollections.UPLOADED_LOGS.value)
                 if collection_data is None:
                     self.utils.logger.error(f"No log data available for selected log: {selected_log}")
                     return [dash.no_update] * 7
