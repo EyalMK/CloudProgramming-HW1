@@ -1,13 +1,38 @@
-### DataFrames Handler
+# DataFrames Handler
 import os
 from datetime import timedelta, datetime
-
-from config.constants import DatabaseCollections, DEFAULT_MAX_DATE, DEFAULT_MIN_DATE
 import pandas as pd
+from config.constants import DatabaseCollections, DEFAULT_MAX_DATE, DEFAULT_MIN_DATE
 
 
 class DataFrameHandler:
+    """
+    A class to handle various operations on data frames including filtering, processing, and
+    analyzing data from logs. This handler reads data from a database, processes it into pandas
+    DataFrames, and performs various analyses.
+
+    Attributes:
+        db_handler (DatabaseHandler): An instance for interacting with the database.
+        utils (Utilities): An instance providing utility functions such as logging.
+        raw_df (pd.DataFrame): The raw data frame from the logs.
+        df (pd.DataFrame): The processed data frame.
+        filters_data (dict): A dictionary holding filter data for documents, users, descriptions,
+            uploaded logs, and graphs.
+        activity_over_time (list): A list holding the activity data over time.
+        document_usage (list): A list holding the document usage data.
+        user_activity (list): A list holding the user activity data.
+        selected_log_path (str): The path to the selected log data in the database.
+        alerts_df (pd.DataFrame): A data frame holding alerts data.
+    """
+
     def __init__(self, db_handler, utils):
+        """
+        Initialize the DataFrameHandler with the necessary database handler and utilities.
+
+        Parameters:
+            db_handler (DatabaseHandler): An instance of DatabaseHandler for database operations.
+            utils (Utilities): An instance of Utilities for various utility functions.
+        """
         self.raw_df = None
         self.df = None
         self.utils = utils
@@ -27,8 +52,12 @@ class DataFrameHandler:
         self.initialize_df()
 
     def initialize_df(self):
+        """
+        Initialize the data frame by reading the default data source from the database.
+        """
         try:
-            data = self.db_handler.read_from_database(DatabaseCollections.ONSHAPE_LOGS.value)  # OnShape logs path acts as the default
+            data = self.db_handler.read_from_database(
+                DatabaseCollections.ONSHAPE_LOGS.value)  # OnShape logs path acts as the default
             # data source
             if data is not None:
                 self.handle_switch_log_source(data)
@@ -36,6 +65,10 @@ class DataFrameHandler:
             raise e
 
     def process_df(self):
+        """
+        Process the raw data frame by performing various operations such as time conversion,
+        filtering, grouping, and generating alerts.
+        """
         self._populate_uploaded_logs()
         if self.raw_df is not None:
             self._convert_time_column(dataframe=self.raw_df)
@@ -47,6 +80,12 @@ class DataFrameHandler:
             self._generate_alerts_df()
 
     def update_with_new_data(self, collection_name):
+        """
+        Update the data frame with new data from the specified collection.
+
+        Parameters:
+            collection_name (str): The name of the collection to update data from.
+        """
         try:
             data = self.db_handler.read_from_database(collection_name)
             self._populate_uploaded_logs(data=data)
@@ -58,16 +97,34 @@ class DataFrameHandler:
             self.utils.logger.error(f"Error updating with new data: {str(e)}")
 
     def handle_switch_log_source(self, data, file_name=None):
-        # Process the newly uploaded data
+        """
+        Handle the switch of the log source and process the new data.
+
+        Parameters:
+            data (dict): The new data to process.
+            file_name (str, optional): The name of the file containing the new data.
+        """  # Process the newly uploaded data
         self._dataframes_from_data(data, file_name)
         self.process_df()  # Reprocess the DataFrame
 
     def get_unread_alerts_count(self):
+        """
+        Get the count of unread alerts.
+
+        Returns:
+            int: The count of unread alerts.
+        """
         if self.alerts_df.empty:
             return 0
         return self.alerts_df[self.alerts_df['Status'] == 'unread'].shape[0]
 
     def get_lightly_refined_graphs_dataframe(self):
+        """
+        Get a lightly refined data frame for graphs with categorized actions.
+
+        Returns:
+            pd.DataFrame: A data frame with 'Description', 'Action', and 'Time' columns.
+        """
         if self.df is not None:
             dataframe_copy = self.df.copy()
             dataframe_copy['Action'] = dataframe_copy['Description'].apply(self.utils.categorize_action)
@@ -75,7 +132,17 @@ class DataFrameHandler:
         # Return an empty DataFrame with expected columns
         return pd.DataFrame(columns=['Description', 'Action', 'Time'])
 
-    def process_graphs_layout_dataframe(self, dataframe):
+    @staticmethod
+    def process_graphs_layout_dataframe(dataframe):
+        """
+        Process the layout data frame for graphs by converting the time column and classifying actions.
+
+        Parameters:
+            dataframe (pd.DataFrame): The data frame to process.
+
+        Returns:
+            pd.DataFrame: The processed data frame with 'Time', 'Action', and 'Action Type' columns.
+        """
         if dataframe is None:
             # Return an empty DataFrame with expected columns
             return pd.DataFrame(columns=['Time', 'Action', 'Action Type'])
@@ -91,7 +158,17 @@ class DataFrameHandler:
 
         return dataframe
 
-    def get_max_min_dates(self, dataframe):
+    @staticmethod
+    def get_max_min_dates(dataframe):
+        """
+        Get the maximum and minimum dates from the data frame, and determine the default start date range.
+
+        Parameters:
+            dataframe (pd.DataFrame): The data frame to analyze.
+
+        Returns:
+            tuple: The maximum date, minimum date, and the default start date.
+        """
         if dataframe is not None and not dataframe.empty:
             # Calculate time spent on each project (Tab) regardless of the user
             dataframe['Time Diff'] = dataframe.groupby('Tab')['Time'].diff().dt.total_seconds()
@@ -107,7 +184,22 @@ class DataFrameHandler:
             start_date = max_date - timedelta(days=7)
         return max_date, min_date, start_date
 
-    def filter_dataframe_for_graphs(self, dataframe, selected_document, selected_log, selected_user, start_time, end_time):
+    @staticmethod
+    def filter_dataframe_for_graphs(dataframe, selected_document, selected_log, selected_user, start_time, end_time):
+        """
+        Filter the data frame for graph data based on selected document, log, user, and time range.
+
+        Parameters:
+            dataframe (pd.DataFrame): The data frame to filter.
+            selected_document (str or list): The selected document(s) to filter.
+            selected_log (str): The selected log to filter.
+            selected_user (str or list): The selected user(s) to filter.
+            start_time (str): The start time for filtering.
+            end_time (str): The end time for filtering.
+
+        Returns:
+            pd.DataFrame: The filtered data frame.
+        """
         filtered_df = dataframe
 
         if selected_document:
@@ -131,7 +223,17 @@ class DataFrameHandler:
         # Group by date and count activities
         return filtered_df
 
-    def setup_project_time_distribution_graph_dataframe(self, dataframe):
+    @staticmethod
+    def setup_project_time_distribution_graph_dataframe(dataframe):
+        """
+        Setup the data frame for project time distribution graph.
+
+        Parameters:
+            dataframe (pd.DataFrame): The data frame to process.
+
+        Returns:
+            pd.DataFrame or None: The processed data frame with time spent on each project.
+        """
         if 'Time' not in dataframe.columns or 'Tab' not in dataframe.columns:
             return None
 
@@ -153,12 +255,36 @@ class DataFrameHandler:
 
         return project_time
 
-    def setup_advanced_basic_actions_graph_dataframe(self, dataframe):
+    @staticmethod
+    def setup_advanced_basic_actions_graph_dataframe(dataframe):
+        """
+        Setup the data frame for advanced and basic actions graph.
+
+        Parameters:
+            dataframe (pd.DataFrame): The data frame to process.
+
+        Returns:
+            pd.DataFrame or None: The processed data frame with action counts.
+        """
         if 'User' not in dataframe.columns or 'Action Type' not in dataframe.columns:
             return None
         return dataframe.groupby(['User', 'Action Type']).size().reset_index(name='Action Count')
 
-    def setup_action_frequency_scatter_graph_dataframe(self, dataframe, start_date, end_date):
+    @staticmethod
+    def setup_action_frequency_scatter_graph_dataframe(dataframe, start_date, end_date):
+        """
+        Setup the data frame for the action frequency scatter graph by filtering
+        based on the provided date range.
+
+        Parameters:
+            dataframe (pd.DataFrame): The data frame to process. It must contain 'Time' and 'User' columns.
+            start_date (str or pd.Timestamp): The start date for filtering.
+            end_date (str or pd.Timestamp): The end date for filtering.
+
+        Returns:
+            pd.DataFrame or None: The filtered data frame containing actions within the specified date range,
+            or None if the required columns are not present in the data frame.
+        """
         if 'Time' not in dataframe.columns or 'User' not in dataframe.columns:
             return None
 
@@ -168,7 +294,18 @@ class DataFrameHandler:
 
         return dataframe[(dataframe['Time'] >= start_date) & (dataframe['Time'] <= end_date)]
 
-    def setup_work_patterns_over_time_graph_dataframe(self, dataframe):
+    @staticmethod
+    def setup_work_patterns_over_time_graph_dataframe(dataframe):
+        """
+        Setup the data frame for the work patterns over time graph.
+
+        Parameters:
+            dataframe (pd.DataFrame): The data frame to process. It must contain a 'Time' column.
+
+        Returns:
+            pd.DataFrame or None: The data frame containing the count of actions grouped by day and hour,
+            or None if the 'Time' column is not present.
+        """
         if 'Time' not in dataframe.columns:
             return None
 
@@ -183,13 +320,35 @@ class DataFrameHandler:
                 work_patterns['Hour'] + 1).astype(str) + ":00"
         return work_patterns
 
-    def setup_repeated_actions_by_user_graph_dataframe(self, dataframe):
+    @staticmethod
+    def setup_repeated_actions_by_user_graph_dataframe(dataframe):
+        """
+        Prepares a DataFrame for plotting repeated actions by users.
+
+        This method sorts the input DataFrame by 'User' and 'Time', then groups the data by 'Action', 'User', and
+        'Description' to count the occurrences of each combination. It returns a DataFrame with the counts of
+        repeated actions.
+
+        Args:
+            dataframe (pd.DataFrame): The input DataFrame containing action data.
+
+        Returns:
+            pd.DataFrame: A DataFrame with columns ['Action', 'User', 'Description', 'Count'] showing the count
+            of repeated actions grouped by user.
+        """
         if 'User' not in dataframe.columns or 'Time' not in dataframe.columns:
             return None
         df = dataframe.sort_values(by=['User', 'Time'])
         return df.groupby(['Action', 'User', 'Description']).size().reset_index(name='Count')
 
     def _dataframes_from_data(self, data, file_name=None):
+        """
+        Initialize the raw and processed DataFrames from the provided data.
+
+        Parameters:
+            data (dict): A dictionary containing the data to be processed.
+            file_name (str, optional): The name of the file to locate the specific data. Defaults to None.
+        """
         data_key = None
         if file_name:
             for key, value in data.items():
@@ -201,11 +360,24 @@ class DataFrameHandler:
         self.df = self.raw_df = pd.DataFrame(data[data_key]['data'])
 
     def _convert_time_column(self, dataframe):
+        """
+        Ensure the 'Time' column in the provided DataFrame is properly parsed to datetime.
+
+        Parameters:
+            dataframe (pd.DataFrame): The DataFrame to process.
+        """
         # Ensure 'Time' column is properly parsed
         if 'Time' in self.raw_df.columns:
             dataframe['Time'] = pd.to_datetime(dataframe['Time'], errors='coerce')
 
     def extract_working_hours_data(self):
+        """
+        Extract and process working hours data from the DataFrame.
+
+        Returns:
+            pd.DataFrame or None: A DataFrame with the distribution of work hours by user and hour,
+                                  or None if the main DataFrame is not initialized.
+        """
         if self.df is None:
             return None
 
@@ -221,11 +393,25 @@ class DataFrameHandler:
             return processed_df.groupby(['User', 'Hour']).size().reset_index(name='ActivityCount')
 
     def _extract_date_for_grouping(self):
+        """
+        Extract the 'Date' from the 'Time' column and add it to the DataFrame.
+
+        This method ensures that a 'Date' column is created from the 'Time' column for grouping purposes.
+        """
         # Ensure 'Date' column is correctly extracted from 'Time'
         if 'Time' in self.df.columns:
             self.df['Date'] = self.df['Time'].dt.date
 
     def _populate_uploaded_logs(self, data=None):
+        """
+        Populate the uploaded logs filter with file names from the database.
+
+        This method reads log data from the database and updates the 'uploaded-logs' filter
+        with the file names of the uploaded logs.
+
+        Args:
+            data (dict, optional): The data to process. If None, reads data from the database.
+        """
         data_to_process = data
         if data_to_process is None:
             data_to_process = self.db_handler.read_from_database(DatabaseCollections.UPLOADED_LOGS.value)
@@ -236,6 +422,10 @@ class DataFrameHandler:
         self.filters_data['uploaded-logs'] = logs
 
     def _populate_filters(self):
+        """
+        Populates the `filters_data` dictionary with unique values from the columns of `self.raw_df`.
+        The dictionary includes lists of unique documents, users, and descriptions found in the DataFrame.
+        """
         if 'Document' in self.raw_df.columns:
             self.filters_data['documents'] = [doc for doc in self.raw_df['Document'].unique()]
         if 'User' in self.raw_df.columns:
@@ -244,20 +434,36 @@ class DataFrameHandler:
             self.filters_data['descriptions'] = [desc for desc in self.raw_df['Description'].unique()]
 
     def _group_activity_over_time(self):
+        """
+        Groups the DataFrame by 'Date' and calculates the count of activities for each date.
+        Updates the `activity_over_time` attribute with the resulting DataFrame.
+        """
         if 'Date' in self.df.columns:
             self.activity_over_time = self.df.groupby('Date').size().reset_index(name='ActivityCount')
 
     def _group_document_usage(self):
+        """
+        Groups the DataFrame by 'Document' and counts the occurrences of each document.
+        Updates the `document_usage` attribute with the resulting DataFrame.
+        """
         if 'Document' in self.df.columns:
             self.document_usage = self.df['Document'].value_counts().reset_index(name='UsageCount')
             self.document_usage.columns = ['Document', 'UsageCount']
 
     def _group_user_activity(self):
+        """
+        Groups the DataFrame by 'User' and counts the occurrences of each user.
+        Updates the `user_activity` attribute with the resulting DataFrame.
+        """
         if 'User' in self.df.columns:
             self.user_activity = self.df['User'].value_counts().reset_index(name='ActivityCount')
             self.user_activity.columns = ['User', 'ActivityCount']
 
     def _undo_redo_activity_detection(self):
+        """
+        Detects and generates alerts for high frequency of 'Undo' and 'Redo' actions within a time window.
+        Updates the `alerts_df` attribute with detected alerts.
+        """
         # Filter redo and undo actions
         redo_undo_df = self.raw_df[self.raw_df['Description'].str.contains('Undo|Redo', case=False)].copy()
 
@@ -277,6 +483,9 @@ class DataFrameHandler:
         else:
             self.alerts_df = pd.DataFrame(columns=['Time', 'User', 'Description', 'Document', 'Status'])
 
-
     def _generate_alerts_df(self):
+        """
+        Generates alerts DataFrame by detecting high frequency of 'Undo' and 'Redo' actions.
+        Updates the `alerts_df` attribute with the generated alerts.
+        """
         self._undo_redo_activity_detection()
