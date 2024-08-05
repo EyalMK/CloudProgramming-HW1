@@ -691,12 +691,19 @@ class DashPageLayouts:
                 multiple=False,  # Single file upload
                 accept='.json'  # Accept only JSON files
             ),
-            html.Div(id='output-json-upload', style={'margin': '10px 0'}),
-            dbc.Checkbox(
-                id='default-data-source',
-                className="mb-3",
-                label="Default data source"
-            ),
-            dbc.Button("Submit", id='submit-button', color="primary", className="w-100", disabled=True),
-            html.Div(id='submit-status', style={'margin': '10px 0'})
+            dcc.Loading(
+                id='loading',
+                type='circle',
+                children=[
+                    html.Div(id='output-json-upload', style={'margin': '10px 0'}),
+                    dbc.Checkbox(
+                        id='default-data-source',
+                        className="mb-3",
+                        label="Default data source"
+                    ),
+                    dbc.Button("Submit", id='submit-button', color="primary", className="w-100", disabled=True),
+                    html.Div(id='submit-status', style={'margin': '10px 0'})
+                ]
+            )
         ])
+

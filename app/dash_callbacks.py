@@ -146,6 +146,7 @@ class DashCallbacks:
 
                 return dash.no_update, dash.no_update, "No data to submit."
 
+
         # Callback to Search onShape Glossary
         @self.dash_app.callback(
             Output("output", "children"),
