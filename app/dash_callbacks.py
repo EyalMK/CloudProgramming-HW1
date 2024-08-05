@@ -146,8 +146,10 @@ class DashCallbacks:
                         json_data = json.loads(decoded)
 
                         processed_filename = filename
+                        index = 1
                         while processed_filename in self.df_handler.filters_data['uploaded-logs']:
-                            processed_filename = processed_filename.split('.json')[0] + " - Copy.json"
+                            processed_filename = f"{filename.split('.json')[0]} ({index}).json"
+                            index += 1
 
                         data_to_store = {
                             "fileName": processed_filename,
