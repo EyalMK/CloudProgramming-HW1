@@ -9,6 +9,7 @@ from config.constants import DatabaseCollections
 from dataframes.dataframe_handler import DataFrameHandler
 from search_engine.search_engine import SearchEngine
 from utils.utilities import Utilities
+from dash import ALL
 
 
 class DashCallbacks:
@@ -329,3 +330,25 @@ class DashCallbacks:
                 return self.page_layouts.chatbot_layout()
             else:
                 return self.page_layouts.landing_page_layout()
+
+        @self.dash_app.callback(
+            Output({'type': 'collapse', 'index': ALL}, 'is_open'),
+            Input({'type': 'toggle', 'index': ALL}, 'n_clicks'),
+            State({'type': 'collapse', 'index': ALL}, 'is_open')
+        )
+        def toggle_collapsible_list(n_clicks_list, is_open_list):
+            ctx = dash.callback_context
+            if not ctx.triggered:
+                return [dash.no_update] * len(is_open_list)
+
+            # Convert the prop_id string back into a dictionary to extract the index
+            triggered_id_dict = eval(ctx.triggered[0]['prop_id'].split('.')[0])
+
+            # Extract the index value from the triggered_id_dict
+            triggered_index = triggered_id_dict['index']
+
+            # Toggle the appropriate item
+            return [
+                not is_open_list[i] if i == triggered_index else is_open_list[i]
+                for i in range(len(is_open_list))
+            ]

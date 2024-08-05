@@ -637,7 +637,7 @@ class DashPageLayouts:
 
             header = dbc.Button(
                 action,
-                id=f"group-{index}-toggle",
+                id={'type': 'toggle', 'index': index},
                 color="link",
                 n_clicks=0,
                 style={'text-align': 'left', 'width': '100%', 'padding': '10px', 'border': '1px solid #ddd'}
@@ -651,17 +651,11 @@ class DashPageLayouts:
                         html.Strong("Count: "), f"{desc[2]}"
                     ])) for desc in user_descriptions
                 ])),
-                id=f"group-{index}-collapse",
+                id={'type': 'collapse', 'index': index},
                 is_open=False
             )
 
             items.append(dbc.Card([header, body]))
-
-            self.dash_app.callback(
-                Output(f"group-{index}-collapse", "is_open"),
-                [Input(f"group-{index}-toggle", "n_clicks")],
-                [State(f"group-{index}-collapse", "is_open")]
-            )(lambda n, is_open: not is_open if n else is_open)
 
         return items
 
