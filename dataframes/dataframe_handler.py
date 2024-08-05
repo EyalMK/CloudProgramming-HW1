@@ -21,7 +21,7 @@ class DataFrameHandler:
         activity_over_time (list): A list holding the activity data over time.
         document_usage (list): A list holding the document usage data.
         user_activity (list): A list holding the user activity data.
-        selected_log_path (str): The path to the selected log data in the database.
+        selected_log_name (str): The path to the selected log data in the database.
         alerts_df (pd.DataFrame): A data frame holding alerts data.
     """
 
@@ -46,7 +46,7 @@ class DataFrameHandler:
         self.activity_over_time = []
         self.document_usage = []
         self.user_activity = []
-        self.selected_log_path = DatabaseCollections.ONSHAPE_LOGS.value  # Default data source
+        self.selected_log_name = DatabaseCollections.ONSHAPE_LOGS.value  # Default data source
         self.alerts_df = pd.DataFrame()
         self.db_handler = db_handler
         self.initialize_df()
@@ -185,14 +185,13 @@ class DataFrameHandler:
         return max_date, min_date, start_date
 
     @staticmethod
-    def filter_dataframe_for_graphs(dataframe, selected_document, selected_log, selected_user, start_time, end_time):
+    def filter_dataframe_for_graphs(dataframe, selected_document, selected_user, start_time, end_time):
         """
         Filter the data frame for graph data based on selected document, log, user, and time range.
 
         Parameters:
             dataframe (pd.DataFrame): The data frame to filter.
             selected_document (str or list): The selected document(s) to filter.
-            selected_log (str): The selected log to filter.
             selected_user (str or list): The selected user(s) to filter.
             start_time (str): The start time for filtering.
             end_time (str): The end time for filtering.
@@ -353,9 +352,11 @@ class DataFrameHandler:
         if file_name:
             for key, value in data.items():
                 if value['fileName'] == file_name:
+                    self.selected_log_name = file_name
                     data_key = key
                     break
         if data_key is None:
+            self.selected_log_name = 'Default Log'
             data_key = next(iter(data))  # First key
         self.df = self.raw_df = pd.DataFrame(data[data_key]['data'])
 

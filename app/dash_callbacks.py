@@ -76,7 +76,7 @@ class DashCallbacks:
             dataframe = pd.DataFrame(data)
             # If a log is selected, update dataframe handler attributes with the new log data
             # And then update processed-df and pre-processed-df attributes in the graphs_layout
-            if selected_log:
+            if selected_log and self.df_handler.selected_log_name != selected_log:
                 is_default_source = selected_log.lower() == 'default log'
                 collection_data = self.db_handler.read_from_database(
                     DatabaseCollections.ONSHAPE_LOGS.value if is_default_source else DatabaseCollections.UPLOADED_LOGS.value)
@@ -86,7 +86,7 @@ class DashCallbacks:
                 self.df_handler.handle_switch_log_source(collection_data, file_name=selected_log)
                 dataframe, _ = self.page_layouts.handle_initial_graph_dataframes()
 
-            filtered_df = self.df_handler.filter_dataframe_for_graphs(dataframe, selected_document, selected_log,
+            filtered_df = self.df_handler.filter_dataframe_for_graphs(dataframe, selected_document,
                                                                       selected_user, start_time, end_time)
 
             if filtered_df is None:

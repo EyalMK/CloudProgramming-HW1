@@ -392,10 +392,7 @@ class DashPageLayouts:
     def _create_filters(self) -> html.Div:
         # If the selected log path is not uploaded logs, then the default value for the logs dropdown should be empty
         # Otherwise, it should be the first uploaded log
-        default_log_value = ""
-        if self.df_handler.filters_data['uploaded-logs']:
-            default_log_value = self.df_handler.filters_data['uploaded-logs'][
-                0] if self.df_handler.selected_log_path == DatabaseCollections.UPLOADED_LOGS.value else ""
+        selected_log_name = self.df_handler.selected_log_name
 
         now = datetime.now().strftime('%Y-%m-%dT%H:%M')
 
@@ -411,7 +408,7 @@ class DashPageLayouts:
                     dcc.Dropdown(id='logs-dropdown',
                                  options=self.df_handler.filters_data['uploaded-logs'],
                                  placeholder='Select Log',
-                                 value=self.df_handler.filters_data['uploaded-logs'][0]),
+                                 value=selected_log_name),
                     width=7)
             ], className="mb-3"),
             dbc.Row([
