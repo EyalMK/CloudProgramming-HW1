@@ -2,7 +2,7 @@ from datetime import datetime
 
 from app.dash_callbacks import DashCallbacks
 from dataframes.dataframe_handler import DataFrameHandler
-from config.constants import START_DATE, END_DATE, PROJECT_NAME, UPLOADED_LOGS_PATH, ONSHAPE_LOGS_PATH
+from config.constants import START_DATE, END_DATE, PROJECT_NAME, DatabaseCollections
 import dash
 from dash import dcc, dash_table, Output, Input, State
 from dash import html
@@ -393,7 +393,7 @@ class DashPageLayouts:
         default_log_value = ""
         if self.df_handler.filters_data['uploaded-logs']:
             default_log_value = self.df_handler.filters_data['uploaded-logs'][
-                0] if self.df_handler.selected_log_path == UPLOADED_LOGS_PATH else ""
+                0] if self.df_handler.selected_log_path == DatabaseCollections.UPLOADED_LOGS.value else ""
 
         now = datetime.now().strftime('%Y-%m-%dT%H:%M')
 
