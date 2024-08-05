@@ -12,6 +12,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 
+
 class DashPageLayouts:
     def __init__(self, dash_app: dash.Dash, db_handler: 'DatabaseHandler', utils):
         self.dash_app = dash_app
@@ -232,7 +233,8 @@ class DashPageLayouts:
         ])
 
     def chatbot_layout(self):
-        initial_greeting = "ShapeFlowBot: Hello! I'm ShapeFlowBot! I can assist you with various questions regarding ShapeFlow Monitor. How can I help you today?"
+        initial_greeting = "\nShapeFlowBot: Hello! I'm ShapeFlowBot! I can assist you with various questions regarding ShapeFlow Monitor. How can I help you today?"
+
         return self._create_layout("Chatbot Assistant", [
             dbc.Row([
                 dbc.Col(
@@ -244,11 +246,16 @@ class DashPageLayouts:
                             readOnly=True,
                             style={'width': '100%', 'height': '65vh'}
                         ),
-                        dbc.Input(id='chat-input', placeholder='Type a message...', type='text'),
-                        dbc.Button('Send', id='send-button', color='primary', className='mt-2')
+                        dbc.Input(
+                            id='chat-input',
+                            placeholder='Type a message...',
+                            type='text',
+                            n_submit=0
+                        ),
+                        dbc.Button('Send', id='send-button', color='primary', className='mt-2'),
                     ]),
                     width=12
-                )
+                ),
             ])
         ])
 

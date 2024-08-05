@@ -187,23 +187,29 @@ class DashCallbacks:
 
         @self.dash_app.callback(
             Output('chat-history', 'value'),
-            [Input('send-button', 'n_clicks')],
+            [Input('send-button', 'n_clicks'), Input('chat-input', 'n_submit')],  # Include n_submit
             [State('chat-input', 'value'), State('chat-history', 'value')]
         )
-        def update_chat(n_clicks, user_input, chat_history):
-            if n_clicks is None or user_input is None or user_input.strip() == "":
+        def update_chat(n_clicks, n_submit, user_input, chat_history):
+            if (n_clicks is None and n_submit is None) or user_input is None or user_input.strip() == "":
                 return chat_history
 
             response = self.chat_bot.respond(user_input)
             new_history = f"{chat_history}\n\nYou: {user_input}\n\nShapeFlowBot: {response}"
             return new_history
 
+
         @self.dash_app.callback(
             Output('chat-input', 'value'),
-            [Input('send-button', 'n_clicks')]
+            [Input('send-button', 'n_clicks'), Input('chat-input', 'n_submit')]
         )
-        def clear_input(n_clicks):
-            return ''
+        def clear_input(n_clicks, n_submit):
+            # If either button is clicked or Enter is pressed, clear the input
+            if n_clicks or n_submit:
+                return ''
+            return dash.no_update
+
+
 
         @self.dash_app.callback(
             Output('document-dropdown', 'value'),
