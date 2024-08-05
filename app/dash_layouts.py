@@ -68,7 +68,9 @@ class DashPageLayouts:
                     dcc.Graph(id='project-time-distribution-graph')
                 ]),
                 dcc.Tab(label='Advanced vs. Basic Actions', children=[
-                    dcc.Graph(id='advanced-basic-actions-graph')
+                    dcc.Graph(id='advanced-basic-actions-graph'),
+                    html.H2('Advanced & Basic Actions'),
+                    html.Div(id='grouped-actions-divergence')
                 ]),
                 dcc.Tab(label='Action Frequency by User', children=[
                     dcc.Graph(id='action-frequency-scatter-graph')
@@ -630,32 +632,70 @@ class DashPageLayouts:
 
         return occurrences_melted
 
-    def create_collapsible_list(self, actions):
+    def create_collapsible_list(self, actions, type=''):
         items = []
-        for index, (action, group) in enumerate(actions.groupby('Action')):
-            user_descriptions = group[['User', 'Description', 'Count']].values.tolist()
+        if type == 'repeated_actions':
+            for index, (action, group) in enumerate(actions.groupby('Action')):
+                user_descriptions = group[['User', 'Description', 'Count']].values.tolist()
 
-            header = dbc.Button(
-                action,
-                id={'type': 'toggle', 'index': index},
-                color="link",
-                n_clicks=0,
-                style={'text-align': 'left', 'width': '100%', 'padding': '10px', 'border': '1px solid #ddd'}
-            )
+                header = dbc.Button(
+                    action,
+                    id={'type': 'toggle', 'index': index, 'category': type},
+                    color="link",
+                    n_clicks=0,
+                    style={'text-align': 'left', 'width': '100%', 'padding': '10px', 'border': '1px solid #ddd'}
+                )
 
-            body = dbc.Collapse(
-                dbc.CardBody(html.Ul([
-                    html.Li(html.Span([
-                        html.Strong("User: "), f"{desc[0]}, ",
-                        html.Strong("Action: "), f"{desc[1]}, ",
-                        html.Strong("Count: "), f"{desc[2]}"
-                    ])) for desc in user_descriptions
-                ])),
-                id={'type': 'collapse', 'index': index},
-                is_open=False
-            )
+                body = dbc.Collapse(
+                    dbc.CardBody(html.Ul([
+                        html.Li(html.Span([
+                            html.Strong("User: "), f"{desc[0]}, ",
+                            html.Strong("Action: "), f"{desc[1]}, ",
+                            html.Strong("Count: "), f"{desc[2]}"
+                        ])) for desc in user_descriptions
+                    ])),
+                    id={'type': 'collapse', 'index': index, 'category': type},
+                    is_open=False
+                )
 
-            items.append(dbc.Card([header, body]))
+                items.append(dbc.Card([header, body]))
+
+        elif type == 'advanced_basic_actions':
+            advanced_actions = actions[actions['Action Type'] == 'Advanced']
+            basic_actions = actions[actions['Action Type'] == 'Basic']
+
+            categories = {
+                'Advanced': advanced_actions,
+                'Basic': basic_actions
+            }
+
+            for index, (category, group) in enumerate(categories.items()):
+                action_descriptions = group[['User', 'Action', 'Action Count']].values.tolist()
+
+                header = dbc.Button(
+                    category,
+                    id={'type': 'toggle', 'index': index, 'category': type},
+                    color="link",
+                    n_clicks=0,
+                    style={'text-align': 'left', 'width': '100%', 'padding': '10px', 'border': '1px solid #ddd'}
+                )
+
+                body = dbc.Collapse(
+                    dbc.CardBody(html.Ul([
+                        html.Li(html.Span([
+                            html.Strong("User: "), f"{desc[0]}, ",
+                            html.Strong("Action: "), f"{desc[1]}, ",
+                            html.Strong("Count: "), f"{desc[2]}"
+                        ])) for desc in action_descriptions
+                    ])),
+                    id={'type': 'collapse', 'index': index, 'category': type},
+                    is_open=False
+                )
+
+                items.append(dbc.Card([header, body]))
+
+        else:
+            return html.P("No data to display")
 
         return items
 

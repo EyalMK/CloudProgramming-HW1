@@ -9,7 +9,7 @@ from config.constants import DatabaseCollections
 from dataframes.dataframe_handler import DataFrameHandler
 from search_engine.search_engine import SearchEngine
 from utils.utilities import Utilities
-from dash import ALL
+from dash import MATCH
 
 
 class DashCallbacks:
@@ -37,15 +37,18 @@ class DashCallbacks:
         elif 'clear-all' in button_id and clear_all_clicks:
             return []
 
-    def _update_graph(self, data, setup_dataframe_callback, create_graph_callback, *setup_dataframe_args,
+    def _update_graph(self, data, setup_dataframe_callback, create_graph_callback, *setup_dataframe_args, graph_type = '',
                       collapsible_list=False):
         df = pd.DataFrame(data)
         filtered_df = setup_dataframe_callback(df, *setup_dataframe_args)
         if filtered_df is None:
             return self.page_layouts.create_empty_graph()
+
         if collapsible_list:
-            collapsible_list_component = self.page_layouts.create_collapsible_list(filtered_df)
+            collapsible_df = self.df_handler.prepare_data_for_collapsible_list(df, type=graph_type)
+            collapsible_list_component = self.page_layouts.create_collapsible_list(collapsible_df, type=graph_type)
             return create_graph_callback(dataframe=filtered_df), collapsible_list_component
+
         return create_graph_callback(dataframe=filtered_df)
 
     def register_callbacks(self):
@@ -57,6 +60,7 @@ class DashCallbacks:
              Output('advanced-basic-actions-graph', 'figure'),
              Output('repeated-actions-by-user-graph', 'figure'),
              Output('grouped-actions-div', 'children'),
+             Output('grouped-actions-divergence', 'children'),
              Output('data-source-title', 'children'),
              Output('alerts-count-badge', 'children', allow_duplicate=True)],
             [Input('apply-filters', 'n_clicks')],
@@ -70,7 +74,6 @@ class DashCallbacks:
         )
         def update_all_graphs(n_clicks, data, selected_document, selected_log, selected_user, start_time, end_time):
             dataframe = pd.DataFrame(data)
-
             # If a log is selected, update dataframe handler attributes with the new log data
             # And then update processed-df and pre-processed-df attributes in the graphs_layout
             if selected_log:
@@ -79,7 +82,7 @@ class DashCallbacks:
                     DatabaseCollections.ONSHAPE_LOGS.value if is_default_source else DatabaseCollections.UPLOADED_LOGS.value)
                 if collection_data is None:
                     self.utils.logger.error(f"No log data available for selected log: {selected_log}")
-                    return [dash.no_update] * 7
+                    return [dash.no_update] * 8
                 self.df_handler.handle_switch_log_source(collection_data, file_name=selected_log)
                 dataframe, _ = self.page_layouts.handle_initial_graph_dataframes()
 
@@ -87,17 +90,18 @@ class DashCallbacks:
                                                                       selected_user, start_time, end_time)
 
             if filtered_df is None:
-                return [dash.no_update] * 7
+                return [dash.no_update] * 8
 
             ctx = dash.callback_context
             if not ctx.triggered:
-                return [dash.no_update] * 7
+                return [dash.no_update] * 8
             else:
                 input_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
             fig_action_frequency = fig_work_patterns = fig_project_time = fig_repeated_actions = fig_advanced_basics_actions = self.page_layouts.create_empty_graph()
             collapsible_list = "No data available"
-
+            collapsible_actions_list = "No data available"
+            # print all columns of filtered_df
             if input_id == 'apply-filters':
                 fig_action_frequency = self._update_graph(
                     filtered_df,
@@ -109,23 +113,28 @@ class DashCallbacks:
                 fig_work_patterns = self._update_graph(
                     filtered_df,
                     self.df_handler.setup_work_patterns_over_time_graph_dataframe,
-                    self.page_layouts.create_work_patterns_over_time_graph
+                    self.page_layouts.create_work_patterns_over_time_graph,
+                    graph_type='work_patterns'
                 )
                 fig_project_time = self._update_graph(
                     filtered_df,
                     self.df_handler.setup_project_time_distribution_graph_dataframe,
-                    self.page_layouts.create_project_time_distribution_graph
+                    self.page_layouts.create_project_time_distribution_graph,
+                    graph_type='project_time_distribution'
                 )
                 fig_repeated_actions, collapsible_list = self._update_graph(
                     filtered_df,
                     self.df_handler.setup_repeated_actions_by_user_graph_dataframe,
                     self.page_layouts.create_repeated_actions_graph,
-                    collapsible_list=True,
+                    graph_type='repeated_actions',
+                    collapsible_list=True
                 )
-                fig_advanced_basics_actions = self._update_graph(
+                fig_advanced_basics_actions, collapsible_actions_list = self._update_graph(
                     filtered_df,
                     self.df_handler.setup_advanced_basic_actions_graph_dataframe,
-                    self.page_layouts.create_advanced_basic_actions_graph
+                    self.page_layouts.create_advanced_basic_actions_graph,
+                    graph_type='advanced_basic_actions',
+                    collapsible_list=True
                 )
 
             # Update the data source title if filters are applied
@@ -138,6 +147,7 @@ class DashCallbacks:
                 fig_advanced_basics_actions, \
                 fig_repeated_actions, \
                 collapsible_list, \
+                collapsible_actions_list, \
                 data_source_title, \
                 str(self.df_handler.get_unread_alerts_count())
 
@@ -332,23 +342,11 @@ class DashCallbacks:
                 return self.page_layouts.landing_page_layout()
 
         @self.dash_app.callback(
-            Output({'type': 'collapse', 'index': ALL}, 'is_open'),
-            Input({'type': 'toggle', 'index': ALL}, 'n_clicks'),
-            State({'type': 'collapse', 'index': ALL}, 'is_open')
+            Output({'type': 'collapse', 'index': MATCH, 'category': MATCH}, 'is_open'),
+            Input({'type': 'toggle', 'index': MATCH, 'category': MATCH}, 'n_clicks'),
+            State({'type': 'collapse', 'index': MATCH, 'category': MATCH}, 'is_open')
         )
-        def toggle_collapsible_list(n_clicks_list, is_open_list):
-            ctx = dash.callback_context
-            if not ctx.triggered:
-                return [dash.no_update] * len(is_open_list)
-
-            # Convert the prop_id string back into a dictionary to extract the index
-            triggered_id_dict = eval(ctx.triggered[0]['prop_id'].split('.')[0])
-
-            # Extract the index value from the triggered_id_dict
-            triggered_index = triggered_id_dict['index']
-
-            # Toggle the appropriate item
-            return [
-                not is_open_list[i] if i == triggered_index else is_open_list[i]
-                for i in range(len(is_open_list))
-            ]
+        def toggle_collapsible_list(n_clicks, is_open):
+            if n_clicks:
+                return not is_open
+            return is_open
