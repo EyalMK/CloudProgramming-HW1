@@ -87,7 +87,8 @@ class DashCallbacks:
         @self.dash_app.callback(
             [Output('output-json-upload', 'children'),
              Output('submit-button', 'disabled'),
-             Output('submit-status', 'children')],
+             Output('submit-status', 'children'),
+             Output('alerts-count-badge', 'children', allow_duplicate=True)],
             [Input('upload-json', 'contents'),
              Input('submit-button', 'n_clicks')],
             [State('upload-json', 'filename'),
@@ -96,7 +97,7 @@ class DashCallbacks:
         def handle_file_upload_and_submit(contents, n_clicks, filename, default_data_source):
             ctx = dash.callback_context
             if not ctx.triggered:
-                return "No file uploaded.", True, ''  # Initial state
+                return "No file uploaded.", True, '', dash.no_update  # Initial state
 
             trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
@@ -117,12 +118,12 @@ class DashCallbacks:
                             "data": json_data
                         }
                         self.page_layouts.uploaded_json = data_to_store  # Store JSON data
-                        return f"{filename}", False, ''  # Enable submit button and clear status
+                        return f"{filename}", False, '', str(self.df_handler.get_unread_alerts_count())
                     except json.JSONDecodeError:
                         self.utils.logger.error(f"Failed to parse JSON: {filename}")
-                        return "Failed to parse JSON file.", True, ''  # Keep submit button disabled and clear status
+                        return "Failed to parse JSON file.", True, '', dash.no_update
 
-                return "No file uploaded.", True, ''  # Keep submit button disabled and clear status
+                return "No file uploaded.", True, '', dash.no_update
 
             elif trigger_id == 'submit-button':
                 if n_clicks is not None and contents is not None:
@@ -139,12 +140,12 @@ class DashCallbacks:
                         # Notify DataFrameHandler to update its state
                         self.df_handler.update_with_new_data(collection_name)
 
-                        return dash.no_update, dash.no_update, "File has been uploaded successfully."
+                        return dash.no_update, dash.no_update, "File has been uploaded successfully.", str(self.df_handler.get_unread_alerts_count())
                     except Exception as e:
                         self.utils.logger.error(f"Error uploading JSON: {str(e)}")
-                        return dash.no_update, dash.no_update, f"Error: {str(e)}"
+                        return dash.no_update, dash.no_update, f"Error: {str(e)}", dash.no_update
 
-                return dash.no_update, dash.no_update, "No data to submit."
+                return dash.no_update, dash.no_update, "No data to submit.", dash.no_update
 
 
         # Callback to Search onShape Glossary
@@ -172,7 +173,7 @@ class DashCallbacks:
         # Callback to acknowledge all alerts
         @self.dash_app.callback(
             [Output('alerts-list', 'children'),
-             Output('alerts-count-badge', 'children')],
+             Output('alerts-count-badge', 'children', allow_duplicate=True)],
             [Input('acknowledge-all-button', 'n_clicks')]
         )
         def update_alerts(n_clicks):
