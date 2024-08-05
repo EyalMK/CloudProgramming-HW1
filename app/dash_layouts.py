@@ -4,11 +4,12 @@ from app.dash_callbacks import DashCallbacks
 from dataframes.dataframe_handler import DataFrameHandler
 from config.constants import START_DATE, END_DATE, PROJECT_NAME, UPLOADED_LOGS_PATH, ONSHAPE_LOGS_PATH
 import dash
-from dash import dcc, dash_table
+from dash import dcc, dash_table, Output, Input, State
 from dash import html
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 
 
 class DashPageLayouts:
@@ -45,26 +46,59 @@ class DashPageLayouts:
             self._create_card("Working Hours Overview", dcc.Graph(
                 figure=self._create_working_hours_chart()  # Directly use the figure from _create_working_hours_chart
             ), 12),
-            self._create_card("Night & Weekend & Holidays Work Occurrences", dcc.Graph(figure=self._create_stacked_bar_chart(
-                self._create_occurrences_chart(), 'User', 'Occurrences Count', 'Night & Weekend & Holidays Work Occurrences', color='Type')
-            ), 12)
+            self._create_card("Night & Weekend & Holidays Work Occurrences",
+                              dcc.Graph(figure=self._create_stacked_bar_chart(
+                                  self._create_occurrences_chart(), 'User', 'Occurrences Count',
+                                  'Night & Weekend & Holidays Work Occurrences', color='Type')
+                              ), 12)
         ])
 
     def graphs_layout(self):
         self.data_source_title = "Default Log" if self.df_handler.selected_log_path == ONSHAPE_LOGS_PATH \
             else "Selected Uploaded Log"
-        return self._create_layout("Interactive Graphs", [
+        preprocessed_df = self.df_handler.get_preprocessed_graphs_dataframe()
+        processed_df = self.df_handler.process_graphs_layout_dataframe(dataframe=preprocessed_df)
+        max_date, min_date, default_start_date = self.df_handler.get_max_min_dates(dataframe=processed_df)
+        return self._create_layout("Advanced Team Activity and Analysis Graphs", [
             html.H4(f"Current Data Source - {self.data_source_title}", className="mb-4"),
             self._create_card("Filters", self._create_filters(), 12),
-            self._create_card("Activity Over Time", dcc.Graph(figure=self._create_line_chart(
-                self.df_handler.activity_over_time, 'Date', 'ActivityCount', 'Activity Over Time')
-            ), 12),
-            self._create_card("Document Usage Frequency", dcc.Graph(figure=self._create_bar_chart(
-                self.df_handler.document_usage, 'Document', 'UsageCount', 'Document Usage Frequency')
-            ), 6),
-            self._create_card("User Activity Distribution", dcc.Graph(figure=self._create_pie_chart(
-                self.df_handler.user_activity, 'User', 'ActivityCount', 'User Activity Distribution')
-            ), 6)
+            dcc.Store(id='processed-df', data=processed_df.to_dict()),
+            dcc.Store(id='pre-processed-df', data=preprocessed_df.to_dict()),
+            dcc.Tabs([
+                # 1. Project Time Distribution
+                dcc.Tab(label='Project Time Distribution', children=[
+                    dcc.Graph(id='project-time-distribution-graph')
+                ]),
+
+                # 2. Advanced vs. Basic Actions
+                dcc.Tab(label='Advanced vs. Basic Actions', children=[
+                    dcc.Graph(id='advanced-basic-actions-graph')
+                ]),
+
+                # 3. Action Frequency by User (Scatter Plot with DatePickerRange)
+                dcc.Tab(label='Action Frequency by User', children=[
+                    dcc.DatePickerRange(
+                        id='date-picker-range-action-frequency-scatter',
+                        start_date=default_start_date,
+                        end_date=max_date,
+                        min_date_allowed=min_date,
+                        max_date_allowed=max_date,
+                        display_format='YYYY-MM-DD'
+                    ),
+                    dcc.Graph(id='action-frequency-scatter-graph')
+                ]),
+
+                # 4. Work Patterns Over Different Time Intervals
+                dcc.Tab(label='Work Patterns Over Time', children=[
+                    dcc.Graph(id='work-patterns-over-time-graph')
+                ]),
+
+                dcc.Tab(label='Repeated Actions By User', children=[
+                    dcc.Graph(id='repeated-actions-by-user-graph'),
+                    html.H2('Grouped Actions Descriptions:'),
+                    html.Div(id='grouped-actions-div')
+                ]),
+            ])
         ])
 
     def landing_page_layout(self):
@@ -217,6 +251,52 @@ class DashPageLayouts:
                 )
             ])
         ])
+
+    def create_empty_graph(self):
+        return go.Figure()
+
+    def create_piechart_time_dist(self, dataframe):
+        return self._create_pie_chart(df=dataframe,
+                                      names='Tab',
+                                      values='Time Spent (hours)',
+                                      title='Project Time Distribution (in Hours)',
+                                      labels={'Time Spent (hours)': 'Time Spent (Hours)', 'Tab': 'Project Tab'})
+
+    def create_repeated_actions_graph(self, dataframe):
+        return self._create_stacked_bar_chart(df=dataframe,
+                                              y='User',
+                                              x='Count',
+                                              color='Action',
+                                              title='Repeated Actions Analysis by User',
+                                              orientation='v',
+                                              labels={'User': 'User', 'Count': 'Repetition Count', 'Action': 'Action Description'})
+
+    def create_advanced_basic_actions_graph(self, dataframe):
+        return self._create_stacked_bar_chart(df=dataframe,
+                                              x='User',
+                                              y='Action Count',
+                                              color='Action Type',
+                                              title='Advanced vs. Basic Actions',
+                                              grid=False,
+                                              labels={'User': 'User', 'Action Count': 'Action Count', 'Action Type': 'Action Type'},
+                                              orientation='h')
+
+    def create_action_frequency_scatter_graph(self, dataframe):
+        return self._create_scatter_chart(df=dataframe,
+                                          x='Time',
+                                          y='User',
+                                          color='Action',
+                                          title='Action Frequency by User',
+                                          labels={'Time': 'Time', 'User': 'User', 'Action': 'Action'})
+
+    def create_work_patterns_over_time_graph(self, dataframe):
+        return self._create_stacked_bar_chart(df=dataframe,
+                                              y='Time Interval',
+                                              x='Action Count',
+                                              color='Day',
+                                              orientation='v',
+                                              title='Work Patterns Over Different Time Intervals',
+                                              labels={'Time Interval': 'Time of Day', 'Action Count': 'Action Count', 'Day': 'Day of Week'})
 
     def create_header(self):
         current_date = datetime.now().strftime('%d-%m-%Y')
@@ -380,29 +460,44 @@ class DashPageLayouts:
             return px.line(title=title)
         return px.line(df, x=x, y=y, title=title)
 
-    def _create_stacked_bar_chart(self, df, x, y, title, color):
+    def _create_stacked_bar_chart(self, df, x, y, title, color, labels=None, barmode='group', orientation='h',
+                                  grid=True):
         # Ensure the DataFrame is correctly structured and non-empty
         df, x, y = self._validate_graph_data(df, x, y)
-        if len(df) == 0:
+        if df.empty:
             return px.bar(title=title)
 
-        # Create the grouped horizontal bar chart
-        fig = px.bar(df, x=y, y=x, color=color, title=title, barmode='group', orientation='h')
+        # Create the grouped horizontal bar chart with the given parameters
+        bar_chart_params = {
+            'data_frame': df,
+            'x': y,
+            'y': x,
+            'color': color,
+            'title': title,
+            'barmode': barmode,
+            'orientation': orientation
+        }
 
-        # Update layout to enable grid lines
-        fig.update_layout(
-            xaxis=dict(
-                showgrid=True,  # Enable grid lines on the x-axis
-                gridcolor='white',  # Optional: customize grid line color
-                zeroline=True,  # Show zero line
-                zerolinecolor='white'  # Optional: customize zero line color
-            ),
-            yaxis=dict(
-                showgrid=True,  # Enable grid lines on the y-axis
-                gridcolor='white'  # Optional: customize grid line color
-            ),
-            plot_bgcolor="rgba(229,236,246,255)"  # Transparent background
-        )
+        if labels:
+            bar_chart_params['labels'] = labels
+
+        fig = px.bar(**bar_chart_params)
+
+        # Update layout to enable grid lines if requested
+        if grid:
+            fig.update_layout(
+                xaxis=dict(
+                    showgrid=True,  # Enable grid lines on the x-axis
+                    gridcolor='white',  # Customize grid line color
+                    zeroline=True,  # Show zero line
+                    zerolinecolor='white'  # Customize zero line color
+                ),
+                yaxis=dict(
+                    showgrid=True,  # Enable grid lines on the y-axis
+                    gridcolor='white'  # Customize grid line color
+                ),
+                plot_bgcolor="rgba(229,236,246,255)"  # Set background color
+            )
 
         return fig
 
@@ -412,10 +507,36 @@ class DashPageLayouts:
             return px.bar(title=title)
         return px.bar(df, x=x, y=y, title=title)
 
-    def _create_pie_chart(self, df: pd.DataFrame, names: str, values: str, title: str) -> px.pie:
-        if names is None or values is None or len(df) == 0:
+    def _create_scatter_chart(self, df: pd.DataFrame, x: str, y: str, color: str, title: str,
+                              labels=None) -> px.scatter:
+        scatter_chart_params = {
+            'data_frame': df,
+            'x': x,
+            'y': y,
+            'color': color,
+            'title': title
+        }
+
+        if labels:
+            scatter_chart_params['labels'] = labels
+
+        return px.scatter(**scatter_chart_params)
+
+    def _create_pie_chart(self, df: pd.DataFrame, names: str, values: str, title: str, labels=None) -> px.pie:
+        if names is None or values is None or df.empty:
             return px.pie(title=title)
-        return px.pie(df, names=names, values=values, title=title)
+
+        pie_chart_params = {
+            'data_frame': df,
+            'names': names,
+            'values': values,
+            'title': title
+        }
+
+        if labels:
+            pie_chart_params['labels'] = labels
+
+        return px.pie(**pie_chart_params)
 
     def _create_working_hours_chart(self):
         working_hours = self.df_handler.extract_working_hours_data()
@@ -427,7 +548,7 @@ class DashPageLayouts:
             ticktext = [f"{hour}:00" for hour in tickvals]  # Labels: "0:00", "2:00", ..., "22:00"
 
             # Create the bar chart with custom tick labels
-            fig = px.bar(working_hours, x='Hour', y='ActivityCount', color='User',barmode='group',
+            fig = px.bar(working_hours, x='Hour', y='ActivityCount', color='User', barmode='group',
                          title='Working Hours Distribution by Student')
 
             # Update the x-axis with custom tick labels
@@ -462,6 +583,41 @@ class DashPageLayouts:
                                      var_name='Type', value_name='Occurrences Count')
 
         return occurrences_melted
+
+    def create_collapsible_list(self, actions):
+        items = []
+        for index, (action, group) in enumerate(actions.groupby('Action')):
+            user_descriptions = group[['User', 'Description', 'Count']].values.tolist()
+
+            header = dbc.Button(
+                action,
+                id=f"group-{index}-toggle",
+                color="link",
+                n_clicks=0,
+                style={'text-align': 'left', 'width': '100%', 'padding': '10px', 'border': '1px solid #ddd'}
+            )
+
+            body = dbc.Collapse(
+                dbc.CardBody(html.Ul([
+                    html.Li(html.Span([
+                        html.Strong("User: "), f"{desc[0]}, ",
+                        html.Strong("Action: "), f"{desc[1]}, ",
+                        html.Strong("Count: "), f"{desc[2]}"
+                    ])) for desc in user_descriptions
+                ])),
+                id=f"group-{index}-collapse",
+                is_open=False
+            )
+
+            items.append(dbc.Card([header, body]))
+
+            self.dash_app.callback(
+                Output(f"group-{index}-collapse", "is_open"),
+                [Input(f"group-{index}-toggle", "n_clicks")],
+                [State(f"group-{index}-collapse", "is_open")]
+            )(lambda n, is_open: not is_open if n else is_open)
+
+        return items
 
     def _create_filter_row(self, dropdown_id, placeholder, options, select_all_id, clear_all_id,
                            default_value=None) -> dbc.Row:

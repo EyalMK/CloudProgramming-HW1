@@ -28,3 +28,27 @@ class Utilities:
         console_logger = logging.StreamHandler()
         console_logger.setFormatter(console_formatter)
         self.logger.addHandler(console_logger)
+
+    def categorize_action(self, description):
+        if 'undo' in description.lower():
+            return 'Undo'
+        elif 'redo' in description.lower():
+            return 'Redo'
+        elif 'insert' in description.lower():
+            return 'Insert'
+        elif 'export' in description.lower():
+            return 'Export'
+        elif 'edit' in description.lower():
+            return 'Edit'
+        elif 'commit' in description.lower():
+            return 'Commit'
+        elif 'add' in description.lower():
+            return 'Add'
+        elif 'close' in description.lower():
+            return 'Close'
+        elif 'move' in description.lower():
+            return 'Move'
+        elif 'open' in description.lower():
+            return 'Open'
+        else:
+            return 'Other'

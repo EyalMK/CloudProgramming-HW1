@@ -1,7 +1,8 @@
 ### DataFrames Handler
 import os
+from datetime import timedelta, datetime
 
-from config.constants import ONSHAPE_LOGS_PATH, UPLOADED_LOGS_PATH
+from config.constants import ONSHAPE_LOGS_PATH, UPLOADED_LOGS_PATH, DEFAULT_MAX_DATE, DEFAULT_MIN_DATE
 import pandas as pd
 
 
@@ -62,6 +63,40 @@ class DataFrameHandler:
         if self.alerts_df.empty:
             return 0
         return self.alerts_df[self.alerts_df['Status'] == 'unread'].shape[0]
+
+    def get_preprocessed_graphs_dataframe(self):
+        dataframe_copy = self.df.copy()
+        dataframe_copy['Action'] = dataframe_copy['Description'].apply(self.utils.categorize_action)
+        return dataframe_copy
+
+    def process_graphs_layout_dataframe(self, dataframe):
+        # Convert Time column to datetime
+        dataframe['Time'] = pd.to_datetime(dataframe['Time'], errors='coerce')
+
+        # Drop rows with invalid datetime values
+        dataframe = dataframe.dropna(subset=['Time'])
+
+        # Create a new column to classify actions as Advanced or Basic
+        dataframe['Action Type'] = dataframe['Action'].apply(
+            lambda x: 'Advanced' if x in ['Edit', 'Create', 'Delete', 'Add'] else 'Basic')
+
+        return dataframe
+
+    def get_max_min_dates(self, dataframe):
+        if dataframe is not None and not dataframe.empty:
+            # Calculate time spent on each project (Tab) regardless of the user
+            dataframe['Time Diff'] = dataframe.groupby('Tab')['Time'].diff().dt.total_seconds()
+
+            # Determine the latest date and set the default range to the last 7 days
+            max_date = dataframe['Time'].max()
+            min_date = dataframe['Time'].min()
+            start_date = max_date - timedelta(days=7)
+        else:
+            # If dataframe is None or empty, use default values
+            max_date = datetime.strptime(DEFAULT_MAX_DATE, '%d-%m-%Y')
+            min_date = datetime.strptime(DEFAULT_MIN_DATE, '%d-%m-%Y')
+            start_date = max_date - timedelta(days=7)
+        return max_date, min_date, start_date
 
     def _dataframes_from_data(self, data, collection_source=ONSHAPE_LOGS_PATH):
         self.selected_log_path = collection_source

@@ -2,7 +2,6 @@ import base64
 import json
 import pandas as pd
 import dash
-from dash import html, dash_table
 from dash.dependencies import Input, Output, State
 
 from chatbot.chat_bot import ChatBot
@@ -241,6 +240,112 @@ class DashCallbacks:
         )
         def update_graphs_selection(select_all_clicks, clear_all_clicks, options):
             return self._update_selection(select_all_clicks, clear_all_clicks, options)
+
+        # 1. Project Time Distribution Graph
+        @self.dash_app.callback(
+            Output('project-time-distribution-graph', 'figure'),
+            Input('project-time-distribution-graph', 'id'),
+            State('processed-df', 'data')
+        )
+        def update_project_time_distribution_graph(_, data):
+            df = pd.DataFrame(data)
+
+            # Ensure Time column is datetime
+            df['Time'] = pd.to_datetime(df['Time'], errors='coerce')
+
+            # Drop rows with invalid datetime values
+            df = df.dropna(subset=['Time'])
+
+            # Sort the data by Tab and Time to ensure proper diff calculation
+            df_sorted = df.sort_values(by=['Tab', 'Time'])
+
+            # Calculate the time differences after sorting
+            df_sorted['Time Diff'] = df_sorted.groupby('Tab')['Time'].diff().dt.total_seconds()
+
+            # Filter out rows with NaN in Time Diff or negative Time Diff
+            filtered_df = df_sorted.dropna(subset=['Time Diff'])
+            filtered_df = filtered_df[filtered_df['Time Diff'] > 0]
+            filtered_df = filtered_df[filtered_df['Time Diff'] <= 1800]  # Ignore gaps longer than 30 minutes
+
+            # Check if there is any data left after filtering
+            if filtered_df.empty:
+                return self.page_layouts.create_empty_graph()
+
+            # Recalculate the Time Spent (summing time differences for each Tab)
+            project_time = filtered_df.groupby('Tab')['Time Diff'].sum().reset_index(name='Time Spent (seconds)')
+
+            # Convert seconds to hours for better readability
+            project_time['Time Spent (hours)'] = (project_time['Time Spent (seconds)'] / 3600).round(2)
+
+            # Create the pie chart with the updated Time Spent in hours
+            return self.page_layouts.create_piechart_time_dist(dataframe=project_time)
+
+        # 2. Advanced vs. Basic Actions (Grouped Bar Chart)
+        @self.dash_app.callback(
+            Output('advanced-basic-actions-graph', 'figure'),
+            Input('advanced-basic-actions-graph', 'id'),
+            State('processed-df', 'data')
+        )
+        def update_advanced_basic_actions_graph(_, data):
+            df = pd.DataFrame(data)
+            action_data = df.groupby(['User', 'Action Type']).size().reset_index(name='Action Count')
+            return self.page_layouts.create_advanced_basic_actions_graph(dataframe=action_data)
+
+        # 3. Action Frequency by User (Scatter Plot with DatePickerRange)
+        @self.dash_app.callback(
+            Output('action-frequency-scatter-graph', 'figure'),
+            [Input('date-picker-range-action-frequency-scatter', 'start_date'),
+             Input('date-picker-range-action-frequency-scatter', 'end_date')],
+            State('processed-df', 'data')
+        )
+        def update_action_frequency_scatter_graph(start_date, end_date, data):
+            # Filter the data based on the selected date range
+            df = pd.DataFrame(data)
+            filtered_df = df[(df['Time'] >= start_date) & (df['Time'] <= end_date)]
+
+            # Create the scatter plot
+            return self.page_layouts.create_action_frequency_scatter_graph(dataframe=filtered_df)
+
+        # 4. Work Patterns Over Different Time Intervals (Bar Chart)
+        @self.dash_app.callback(
+            Output('work-patterns-over-time-graph', 'figure'),
+            Input('work-patterns-over-time-graph', 'id'),
+            State('processed-df', 'data')
+        )
+        def update_work_patterns_over_time_graph(_, data):
+            df = pd.DataFrame(data)
+
+            # Ensure Time column is datetime
+            df['Time'] = pd.to_datetime(df['Time'], errors='coerce')
+
+            # Drop rows with invalid datetime values
+            df = df.dropna(subset=['Time'])
+
+            work_patterns = df.groupby(
+                [df['Time'].dt.day_name().rename('Day'), df['Time'].dt.hour.rename('Hour')]
+            ).size().reset_index(name='Action Count')
+
+            work_patterns['Time Interval'] = work_patterns['Hour'].astype(str) + ":00 - " + (
+                    work_patterns['Hour'] + 1).astype(str) + ":00"
+
+            return self.page_layouts.create_work_patterns_over_time_graph(dataframe=work_patterns)
+
+        # 5. Repeated Actions Frequencies Graph
+        @self.dash_app.callback(
+            [Output('repeated-actions-by-user-graph', 'figure'),
+             Output('grouped-actions-div', 'children')],
+            Input('repeated-actions-by-user-graph', 'id'),
+            State('pre-processed-df', 'data')
+        )
+        def update_repeated_actions_by_user_graph(_, data):
+            df = pd.DataFrame(data)
+            df = df.sort_values(by=['User', 'Time'])
+            grouped_actions = df.groupby(['Action', 'User', 'Description']).size().reset_index(name='Count')
+
+            figure = self.page_layouts.create_repeated_actions_graph(dataframe=grouped_actions)
+            collapsible_list = self.page_layouts.create_collapsible_list(grouped_actions)
+
+            return figure, collapsible_list
 
         # Callbacks for dynamic content
         @self.dash_app.callback(
