@@ -49,8 +49,8 @@ class DashPageLayouts:
             ), 12),
             self._create_card("Night & Weekend & Holidays Work Occurrences",
                               dcc.Graph(figure=self._create_stacked_bar_chart(
-                                  self._create_occurrences_chart(), 'User', 'Occurrences Count',
-                                  'Night & Weekend & Holidays Work Occurrences', color='Type')
+                                  self._create_occurrences_chart(), y='User', x='Occurrences Count',
+                                  title='Night & Weekend & Holidays Work Occurrences', color='Type')
                               ), 12)
         ])
 
@@ -271,8 +271,8 @@ class DashPageLayouts:
 
     def create_repeated_actions_graph(self, dataframe):
         return self._create_stacked_bar_chart(df=dataframe,
-                                              y='User',
-                                              x='Count',
+                                              x='User',
+                                              y='Count',
                                               color='Action',
                                               title='Repeated Actions Analysis by User',
                                               orientation='v',
@@ -280,8 +280,8 @@ class DashPageLayouts:
 
     def create_advanced_basic_actions_graph(self, dataframe):
         return self._create_stacked_bar_chart(df=dataframe,
-                                              x='User',
-                                              y='Action Count',
+                                              x='Action Count',
+                                              y='User',
                                               color='Action Type',
                                               title='Advanced vs. Basic Actions',
                                               grid=False,
@@ -298,8 +298,8 @@ class DashPageLayouts:
 
     def create_work_patterns_over_time_graph(self, dataframe):
         return self._create_stacked_bar_chart(df=dataframe,
-                                              y='Time Interval',
-                                              x='Action Count',
+                                              x='Time Interval',
+                                              y='Action Count',
                                               color='Day',
                                               orientation='v',
                                               title='Work Patterns Over Different Time Intervals',
@@ -454,31 +454,51 @@ class DashPageLayouts:
             children.append(dbc.Badge(badge_text, color=badge_color, className="ml-2", id=badge_id))
         return dbc.NavLink(children, href=href, active="exact", className="text-white gap-6")
 
-    def _validate_graph_data(self, df, x, y):
-        if not isinstance(df, pd.DataFrame):  # if df is [] list then return empty df
-            return pd.DataFrame({x: [], y: []}), x, y
-        if x is None or y is None:
-            return pd.DataFrame({x: [], y: []}), x, y
-        return df, x, y
+    def _validate_graph_data(self, df, *columns):
+        # Ensure columns are provided and are not None
+        if not columns or any(col is None for col in columns):
+            # Return an empty DataFrame with the expected column names
+            return pd.DataFrame({col: [] for col in columns}), columns
+
+        # Check if df is a DataFrame, otherwise create an empty DataFrame with the expected columns
+        if not isinstance(df, pd.DataFrame) or df.empty:
+            df = pd.DataFrame({col: [] for col in columns})
+
+        # Ensure that the DataFrame has the required columns
+        missing_columns = [col for col in columns if col not in df.columns]
+        if missing_columns:
+            for col in missing_columns:
+                df[col] = []  # Add missing columns as empty
+
+        return df, columns
 
     def _create_line_chart(self, df: pd.DataFrame, x: str, y: str, title: str) -> px.line:
-        df, x, y = self._validate_graph_data(df, x, y)
-        if len(df) == 0:
+        # Validate the graph data by passing df and the columns to _validate_graph_data
+        df, validated_columns = self._validate_graph_data(df, x, y)
+        x, y = validated_columns  # Unpack the validated columns
+
+        # If the DataFrame is empty after validation, return an empty line chart with just the title
+        if df.empty:
             return px.line(title=title)
+
+        # Create and return the line chart using Plotly Express
         return px.line(df, x=x, y=y, title=title)
 
     def _create_stacked_bar_chart(self, df, x, y, title, color, labels=None, barmode='group', orientation='h',
                                   grid=True):
-        # Ensure the DataFrame is correctly structured and non-empty
-        df, x, y = self._validate_graph_data(df, x, y)
+        # Validate the graph data by passing df and the columns to _validate_graph_data
+        df, validated_columns = self._validate_graph_data(df, x, y, color)
+        x, y, color = validated_columns  # Unpack the validated columns
+
+        # If the DataFrame is empty after validation, return an empty bar chart with just the title
         if df.empty:
             return px.bar(title=title)
 
-        # Create the grouped horizontal bar chart with the given parameters
+        # Create the grouped bar chart with the given parameters
         bar_chart_params = {
             'data_frame': df,
-            'x': y,
-            'y': x,
+            'x': x,
+            'y': y,
             'color': color,
             'title': title,
             'barmode': barmode,
@@ -493,29 +513,33 @@ class DashPageLayouts:
         # Update layout to enable grid lines if requested
         if grid:
             fig.update_layout(
-                xaxis=dict(
-                    showgrid=True,  # Enable grid lines on the x-axis
-                    gridcolor='white',  # Customize grid line color
-                    zeroline=True,  # Show zero line
-                    zerolinecolor='white'  # Customize zero line color
-                ),
-                yaxis=dict(
-                    showgrid=True,  # Enable grid lines on the y-axis
-                    gridcolor='white'  # Customize grid line color
-                ),
-                plot_bgcolor="rgba(229,236,246,255)"  # Set background color
+                xaxis=dict(showgrid=True, gridcolor='white', zeroline=True, zerolinecolor='white'),
+                yaxis=dict(showgrid=True, gridcolor='white'),
+                plot_bgcolor="rgba(229,236,246,255)"
             )
 
         return fig
 
     def _create_bar_chart(self, df: pd.DataFrame, x: str, y: str, title: str) -> px.bar:
-        df, x, y = self._validate_graph_data(df, x, y)
-        if len(df) == 0:
+        df, validated_columns = self._validate_graph_data(df, x, y)
+        x, y = validated_columns  # Unpack the validated columns
+
+        if df.empty:
             return px.bar(title=title)
+
         return px.bar(df, x=x, y=y, title=title)
 
     def _create_scatter_chart(self, df: pd.DataFrame, x: str, y: str, color: str, title: str,
                               labels=None) -> px.scatter:
+        # Validate the graph data by passing df and the columns to _validate_graph_data
+        df, validated_columns = self._validate_graph_data(df, x, y, color)
+        x, y, color = validated_columns  # Unpack the validated columns
+
+        # If the DataFrame is empty after validation, return an empty scatter chart with just the title
+        if df.empty:
+            return px.scatter(title=title)
+
+        # Create the scatter chart with the given parameters
         scatter_chart_params = {
             'data_frame': df,
             'x': x,
@@ -530,9 +554,15 @@ class DashPageLayouts:
         return px.scatter(**scatter_chart_params)
 
     def _create_pie_chart(self, df: pd.DataFrame, names: str, values: str, title: str, labels=None) -> px.pie:
-        if names is None or values is None or df.empty:
+        # Validate the graph data by passing df and the columns to _validate_graph_data
+        df, validated_columns = self._validate_graph_data(df, names, values)
+        names, values = validated_columns  # Unpack the validated columns
+
+        # If the DataFrame is empty after validation, return an empty pie chart with just the title
+        if df.empty:
             return px.pie(title=title)
 
+        # Create the pie chart with the given parameters
         pie_chart_params = {
             'data_frame': df,
             'names': names,

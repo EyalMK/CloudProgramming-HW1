@@ -65,11 +65,17 @@ class DataFrameHandler:
         return self.alerts_df[self.alerts_df['Status'] == 'unread'].shape[0]
 
     def get_preprocessed_graphs_dataframe(self):
-        dataframe_copy = self.df.copy()
-        dataframe_copy['Action'] = dataframe_copy['Description'].apply(self.utils.categorize_action)
-        return dataframe_copy
+        if self.df is not None:
+            dataframe_copy = self.df.copy()
+            dataframe_copy['Action'] = dataframe_copy['Description'].apply(self.utils.categorize_action)
+            return dataframe_copy
+        # Return an empty DataFrame with expected columns
+        return pd.DataFrame(columns=['Description', 'Action', 'Time'])
 
     def process_graphs_layout_dataframe(self, dataframe):
+        if dataframe is None:
+            # Return an empty DataFrame with expected columns
+            return pd.DataFrame(columns=['Time', 'Action', 'Action Type'])
         # Convert Time column to datetime
         dataframe['Time'] = pd.to_datetime(dataframe['Time'], errors='coerce')
 

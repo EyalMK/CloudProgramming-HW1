@@ -256,34 +256,25 @@ class DashCallbacks:
         def update_project_time_distribution_graph(_, data):
             df = pd.DataFrame(data)
 
-            # Ensure Time column is datetime
-            df['Time'] = pd.to_datetime(df['Time'], errors='coerce')
+            if 'Time' not in df.columns or 'Tab' not in df.columns:
+                return self.page_layouts.create_empty_graph()
 
-            # Drop rows with invalid datetime values
+            df['Time'] = pd.to_datetime(df['Time'], errors='coerce')
             df = df.dropna(subset=['Time'])
 
-            # Sort the data by Tab and Time to ensure proper diff calculation
             df_sorted = df.sort_values(by=['Tab', 'Time'])
-
-            # Calculate the time differences after sorting
             df_sorted['Time Diff'] = df_sorted.groupby('Tab')['Time'].diff().dt.total_seconds()
 
-            # Filter out rows with NaN in Time Diff or negative Time Diff
             filtered_df = df_sorted.dropna(subset=['Time Diff'])
             filtered_df = filtered_df[filtered_df['Time Diff'] > 0]
-            filtered_df = filtered_df[filtered_df['Time Diff'] <= 1800]  # Ignore gaps longer than 30 minutes
+            filtered_df = filtered_df[filtered_df['Time Diff'] <= 1800]
 
-            # Check if there is any data left after filtering
             if filtered_df.empty:
                 return self.page_layouts.create_empty_graph()
 
-            # Recalculate the Time Spent (summing time differences for each Tab)
             project_time = filtered_df.groupby('Tab')['Time Diff'].sum().reset_index(name='Time Spent (seconds)')
-
-            # Convert seconds to hours for better readability
             project_time['Time Spent (hours)'] = (project_time['Time Spent (seconds)'] / 3600).round(2)
 
-            # Create the pie chart with the updated Time Spent in hours
             return self.page_layouts.create_piechart_time_dist(dataframe=project_time)
 
         # 2. Advanced vs. Basic Actions (Grouped Bar Chart)
@@ -294,6 +285,10 @@ class DashCallbacks:
         )
         def update_advanced_basic_actions_graph(_, data):
             df = pd.DataFrame(data)
+
+            if 'User' not in df.columns or 'Action Type' not in df.columns:
+                return self.page_layouts.create_empty_graph()
+
             action_data = df.groupby(['User', 'Action Type']).size().reset_index(name='Action Count')
             return self.page_layouts.create_advanced_basic_actions_graph(dataframe=action_data)
 
@@ -305,11 +300,16 @@ class DashCallbacks:
             State('processed-df', 'data')
         )
         def update_action_frequency_scatter_graph(start_date, end_date, data):
-            # Filter the data based on the selected date range
             df = pd.DataFrame(data)
-            filtered_df = df[(df['Time'] >= start_date) & (df['Time'] <= end_date)]
 
-            # Create the scatter plot
+            if 'Time' not in df.columns or 'User' not in df.columns:
+                return self.page_layouts.create_empty_graph()
+
+            df['Time'] = pd.to_datetime(df['Time'], errors='coerce')
+            start_date = pd.to_datetime(start_date)
+            end_date = pd.to_datetime(end_date)
+
+            filtered_df = df[(df['Time'] >= start_date) & (df['Time'] <= end_date)]
             return self.page_layouts.create_action_frequency_scatter_graph(dataframe=filtered_df)
 
         # 4. Work Patterns Over Different Time Intervals (Bar Chart)
@@ -321,10 +321,10 @@ class DashCallbacks:
         def update_work_patterns_over_time_graph(_, data):
             df = pd.DataFrame(data)
 
-            # Ensure Time column is datetime
-            df['Time'] = pd.to_datetime(df['Time'], errors='coerce')
+            if 'Time' not in df.columns:
+                return self.page_layouts.create_empty_graph()
 
-            # Drop rows with invalid datetime values
+            df['Time'] = pd.to_datetime(df['Time'], errors='coerce')
             df = df.dropna(subset=['Time'])
 
             work_patterns = df.groupby(
@@ -345,6 +345,10 @@ class DashCallbacks:
         )
         def update_repeated_actions_by_user_graph(_, data):
             df = pd.DataFrame(data)
+
+            if 'User' not in df.columns or 'Time' not in df.columns:
+                return self.page_layouts.create_empty_graph(), "No data available"
+
             df = df.sort_values(by=['User', 'Time'])
             grouped_actions = df.groupby(['Action', 'User', 'Description']).size().reset_index(name='Count')
 

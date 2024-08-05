@@ -314,7 +314,7 @@
         ]
       },
       {
-        "pattern": "\\b(subscriptions)\\b|\\b(sub\\b|\\b(subs)\\b|\\b(subscription)\\b",
+        "pattern": "\\b(subscriptions)\\b|\\b(sub)\\b|\\b(subs)\\b|\\b(subscription)\\b",
         "responses": [
           "Onshape offers various subscription plans, including free options and professional packages with advanced features.",
           "Choose a subscription plan that fits your needs, from individual users to enterprise-level deployments."
