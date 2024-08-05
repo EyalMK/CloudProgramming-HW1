@@ -10,7 +10,7 @@ class PatternsHandler:
         self._load_shapeflow_patterns()
 
     def _load_shapeflow_patterns(self):
-        patterns = self.db_handler.read_from_database(DatabaseCollections.bot_prompts.value)
+        patterns = self.db_handler.read_from_database(DatabaseCollections.BOT_PROMPTS.value)
         if patterns:
             for category, patterns in patterns.items():
                 for pattern_data in patterns:

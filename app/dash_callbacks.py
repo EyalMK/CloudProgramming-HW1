@@ -170,7 +170,7 @@ class DashCallbacks:
                         decoded = base64.b64decode(content_string)
                         size_kb = len(decoded) / 1024  # size in KB
 
-                        collection_name = DatabaseCollections.onshape_logs.value if default_data_source else DatabaseCollections.uploaded_logs.value
+                        collection_name = DatabaseCollections.ONSHAPE_LOGS.value if default_data_source else DatabaseCollections.UPLOADED_LOGS.value
 
                         self.db_handler.write_to_database(collection_name, self.page_layouts.uploaded_json)
                         self.utils.logger.info(f"Uploaded JSON of size: {size_kb:.2f} KB")
