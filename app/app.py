@@ -62,6 +62,6 @@ class App:
         return ngrok.connect(PORT).public_url
 
     def run(self):
-        debug = os.environ["RUNTIME_ENVIRONMENT"] in [RuntimeEnvironments.dev.value, RuntimeEnvironments.test.value]
+        debug = os.environ["RUNTIME_ENVIRONMENT"] in [RuntimeEnvironments.DEV.value, RuntimeEnvironments.TEST.value]
         self.utils.logger.info("=============== ShapeFlow Monitor is Running ===============")
-        self.dash_app.run_server(debug=debug, use_reloader=True, port=PORT, dev_tools_props_check=False)
+        self.dash_app.run_server(debug=debug, use_reloader=debug, port=PORT, dev_tools_props_check=False)

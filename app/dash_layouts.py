@@ -2,7 +2,7 @@ from datetime import datetime
 
 from app.dash_callbacks import DashCallbacks
 from dataframes.dataframe_handler import DataFrameHandler
-from config.constants import START_DATE, END_DATE, PROJECT_NAME, UPLOADED_LOGS_PATH, ONSHAPE_LOGS_PATH
+from config.constants import START_DATE, END_DATE, PROJECT_NAME, DatabaseCollections
 import dash
 from dash import dcc, dash_table, Output, Input, State
 from dash import html
@@ -12,12 +12,13 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 
-
 class DashPageLayouts:
     def __init__(self, dash_app: dash.Dash, db_handler: 'DatabaseHandler', utils):
         self.dash_app = dash_app
         self.db_handler = db_handler
         self.df_handler = DataFrameHandler(db_handler, utils)
+        self.lightly_refined_df = pd.DataFrame([])
+        self.graph_processed_df = pd.DataFrame([])
         self.uploaded_json = None
         self.data_source_title = "Default Log"
         self.utils = utils
@@ -49,51 +50,32 @@ class DashPageLayouts:
             ), 12),
             self._create_card("Night & Weekend & Holidays Work Occurrences",
                               dcc.Graph(figure=self._create_stacked_bar_chart(
-                                  self._create_occurrences_chart(), 'User', 'Occurrences Count',
-                                  'Night & Weekend & Holidays Work Occurrences', color='Type')
+                                  self._create_occurrences_chart(), y='User', x='Occurrences Count',
+                                  title='Night & Weekend & Holidays Work Occurrences', color='Type')
                               ), 12)
         ])
 
     def graphs_layout(self):
-        self.data_source_title = "Default Log" if self.df_handler.selected_log_path == ONSHAPE_LOGS_PATH \
-            else "Selected Uploaded Log"
-        preprocessed_df = self.df_handler.get_preprocessed_graphs_dataframe()
-        processed_df = self.df_handler.process_graphs_layout_dataframe(dataframe=preprocessed_df)
-        max_date, min_date, default_start_date = self.df_handler.get_max_min_dates(dataframe=processed_df)
+        _, _ = self.handle_initial_graph_dataframes()
         return self._create_layout("Advanced Team Activity and Analysis Graphs", [
-            html.H4(f"Current Data Source - {self.data_source_title}", className="mb-4"),
+            html.H4(id='data-source-title', children=f"Current Data Source - {self.data_source_title}",
+                    className="mb-4"),
             self._create_card("Filters", self._create_filters(), 12),
-            dcc.Store(id='processed-df', data=processed_df.to_dict()),
-            dcc.Store(id='pre-processed-df', data=preprocessed_df.to_dict()),
+            dcc.Store(id='processed-df', data=self.graph_processed_df.to_dict()),
+            dcc.Store(id='pre-processed-df', data=self.lightly_refined_df.to_dict()),
             dcc.Tabs([
-                # 1. Project Time Distribution
                 dcc.Tab(label='Project Time Distribution', children=[
                     dcc.Graph(id='project-time-distribution-graph')
                 ]),
-
-                # 2. Advanced vs. Basic Actions
                 dcc.Tab(label='Advanced vs. Basic Actions', children=[
                     dcc.Graph(id='advanced-basic-actions-graph')
                 ]),
-
-                # 3. Action Frequency by User (Scatter Plot with DatePickerRange)
                 dcc.Tab(label='Action Frequency by User', children=[
-                    dcc.DatePickerRange(
-                        id='date-picker-range-action-frequency-scatter',
-                        start_date=default_start_date,
-                        end_date=max_date,
-                        min_date_allowed=min_date,
-                        max_date_allowed=max_date,
-                        display_format='YYYY-MM-DD'
-                    ),
                     dcc.Graph(id='action-frequency-scatter-graph')
                 ]),
-
-                # 4. Work Patterns Over Different Time Intervals
                 dcc.Tab(label='Work Patterns Over Time', children=[
                     dcc.Graph(id='work-patterns-over-time-graph')
                 ]),
-
                 dcc.Tab(label='Repeated Actions By User', children=[
                     dcc.Graph(id='repeated-actions-by-user-graph'),
                     html.H2('Grouped Actions Descriptions:'),
@@ -262,30 +244,34 @@ class DashPageLayouts:
     def create_empty_graph(self):
         return go.Figure()
 
-    def create_piechart_time_dist(self, dataframe):
+    def create_project_time_distribution_graph(self, dataframe):
+        threshold_percentage = 0.4
         return self._create_pie_chart(df=dataframe,
                                       names='Tab',
                                       values='Time Spent (hours)',
-                                      title='Project Time Distribution (in Hours)',
-                                      labels={'Time Spent (hours)': 'Time Spent (Hours)', 'Tab': 'Project Tab'})
+                                      title=f'Project Time Distribution (in Hours) - Minimum threshold: {threshold_percentage}%',
+                                      labels={'Time Spent (hours)': 'Time Spent (Hours)', 'Tab': 'Project Tab'},
+                                      threshold_percentage=threshold_percentage)
 
     def create_repeated_actions_graph(self, dataframe):
         return self._create_stacked_bar_chart(df=dataframe,
-                                              y='User',
-                                              x='Count',
+                                              x='User',
+                                              y='Count',
                                               color='Action',
                                               title='Repeated Actions Analysis by User',
                                               orientation='v',
-                                              labels={'User': 'User', 'Count': 'Repetition Count', 'Action': 'Action Description'})
+                                              labels={'User': 'User', 'Count': 'Repetition Count',
+                                                      'Action': 'Action Description'})
 
     def create_advanced_basic_actions_graph(self, dataframe):
         return self._create_stacked_bar_chart(df=dataframe,
-                                              x='User',
-                                              y='Action Count',
+                                              x='Action Count',
+                                              y='User',
                                               color='Action Type',
                                               title='Advanced vs. Basic Actions',
                                               grid=False,
-                                              labels={'User': 'User', 'Action Count': 'Action Count', 'Action Type': 'Action Type'},
+                                              labels={'User': 'User', 'Action Count': 'Action Count',
+                                                      'Action Type': 'Action Type'},
                                               orientation='h')
 
     def create_action_frequency_scatter_graph(self, dataframe):
@@ -298,12 +284,18 @@ class DashPageLayouts:
 
     def create_work_patterns_over_time_graph(self, dataframe):
         return self._create_stacked_bar_chart(df=dataframe,
-                                              y='Time Interval',
-                                              x='Action Count',
+                                              x='Time Interval',
+                                              y='Action Count',
                                               color='Day',
                                               orientation='v',
                                               title='Work Patterns Over Different Time Intervals',
-                                              labels={'Time Interval': 'Time of Day', 'Action Count': 'Action Count', 'Day': 'Day of Week'})
+                                              labels={'Time Interval': 'Time of Day', 'Action Count': 'Action Count',
+                                                      'Day': 'Day of Week'})
+
+    def handle_initial_graph_dataframes(self):
+        self.lightly_refined_df = self.df_handler.get_lightly_refined_graphs_dataframe()
+        self.graph_processed_df = self.df_handler.process_graphs_layout_dataframe(dataframe=self.lightly_refined_df)
+        return self.graph_processed_df, self.lightly_refined_df
 
     def create_header(self):
         current_date = datetime.now().strftime('%d-%m-%Y')
@@ -401,7 +393,7 @@ class DashPageLayouts:
         default_log_value = ""
         if self.df_handler.filters_data['uploaded-logs']:
             default_log_value = self.df_handler.filters_data['uploaded-logs'][
-                0] if self.df_handler.selected_log_path == UPLOADED_LOGS_PATH else ""
+                0] if self.df_handler.selected_log_path == DatabaseCollections.UPLOADED_LOGS.value else ""
 
         now = datetime.now().strftime('%Y-%m-%dT%H:%M')
 
@@ -410,10 +402,16 @@ class DashPageLayouts:
                                     'select-all-documents', 'clear-all-documents'),
             self._create_filter_row('user-dropdown', 'Select User', self.df_handler.filters_data['users'],
                                     'select-all-users', 'clear-all-users'),
-            self._create_filter_row('logs-dropdown', 'Select Log', self.df_handler.filters_data['uploaded-logs'],
-                                    'select-all-logs', 'clear-all-logs', default_value=default_log_value),
             self._create_filter_row('graphs-dropdown', 'Select Graphs', self.df_handler.filters_data['graphs'],
                                     'select-all-graphs', 'clear-all-graphs'),
+            dbc.Row([
+                dbc.Col(
+                    dcc.Dropdown(id='logs-dropdown',
+                                 options=self.df_handler.filters_data['uploaded-logs'],
+                                 placeholder='Select Log',
+                                 value=self.df_handler.filters_data['uploaded-logs'][0]),
+                    width=7)
+            ], className="mb-3"),
             dbc.Row([
                 dbc.Col(html.Div([
                     html.Label("Start Time"),
@@ -454,31 +452,51 @@ class DashPageLayouts:
             children.append(dbc.Badge(badge_text, color=badge_color, className="ml-2", id=badge_id))
         return dbc.NavLink(children, href=href, active="exact", className="text-white gap-6")
 
-    def _validate_graph_data(self, df, x, y):
-        if not isinstance(df, pd.DataFrame):  # if df is [] list then return empty df
-            return pd.DataFrame({x: [], y: []}), x, y
-        if x is None or y is None:
-            return pd.DataFrame({x: [], y: []}), x, y
-        return df, x, y
+    def _validate_graph_data(self, df, *columns):
+        # Ensure columns are provided and are not None
+        if not columns or any(col is None for col in columns):
+            # Return an empty DataFrame with the expected column names
+            return pd.DataFrame({col: [] for col in columns}), columns
+
+        # Check if df is a DataFrame, otherwise create an empty DataFrame with the expected columns
+        if not isinstance(df, pd.DataFrame) or df.empty:
+            df = pd.DataFrame({col: [] for col in columns})
+
+        # Ensure that the DataFrame has the required columns
+        missing_columns = [col for col in columns if col not in df.columns]
+        if missing_columns:
+            for col in missing_columns:
+                df[col] = []  # Add missing columns as empty
+
+        return df, columns
 
     def _create_line_chart(self, df: pd.DataFrame, x: str, y: str, title: str) -> px.line:
-        df, x, y = self._validate_graph_data(df, x, y)
-        if len(df) == 0:
+        # Validate the graph data by passing df and the columns to _validate_graph_data
+        df, validated_columns = self._validate_graph_data(df, x, y)
+        x, y = validated_columns  # Unpack the validated columns
+
+        # If the DataFrame is empty after validation, return an empty line chart with just the title
+        if df.empty:
             return px.line(title=title)
+
+        # Create and return the line chart using Plotly Express
         return px.line(df, x=x, y=y, title=title)
 
     def _create_stacked_bar_chart(self, df, x, y, title, color, labels=None, barmode='group', orientation='h',
                                   grid=True):
-        # Ensure the DataFrame is correctly structured and non-empty
-        df, x, y = self._validate_graph_data(df, x, y)
+        # Validate the graph data by passing df and the columns to _validate_graph_data
+        df, validated_columns = self._validate_graph_data(df, x, y, color)
+        x, y, color = validated_columns  # Unpack the validated columns
+
+        # If the DataFrame is empty after validation, return an empty bar chart with just the title
         if df.empty:
             return px.bar(title=title)
 
-        # Create the grouped horizontal bar chart with the given parameters
+        # Create the grouped bar chart with the given parameters
         bar_chart_params = {
             'data_frame': df,
-            'x': y,
-            'y': x,
+            'x': x,
+            'y': y,
             'color': color,
             'title': title,
             'barmode': barmode,
@@ -493,29 +511,33 @@ class DashPageLayouts:
         # Update layout to enable grid lines if requested
         if grid:
             fig.update_layout(
-                xaxis=dict(
-                    showgrid=True,  # Enable grid lines on the x-axis
-                    gridcolor='white',  # Customize grid line color
-                    zeroline=True,  # Show zero line
-                    zerolinecolor='white'  # Customize zero line color
-                ),
-                yaxis=dict(
-                    showgrid=True,  # Enable grid lines on the y-axis
-                    gridcolor='white'  # Customize grid line color
-                ),
-                plot_bgcolor="rgba(229,236,246,255)"  # Set background color
+                xaxis=dict(showgrid=True, gridcolor='white', zeroline=True, zerolinecolor='white'),
+                yaxis=dict(showgrid=True, gridcolor='white'),
+                plot_bgcolor="rgba(229,236,246,255)"
             )
 
         return fig
 
     def _create_bar_chart(self, df: pd.DataFrame, x: str, y: str, title: str) -> px.bar:
-        df, x, y = self._validate_graph_data(df, x, y)
-        if len(df) == 0:
+        df, validated_columns = self._validate_graph_data(df, x, y)
+        x, y = validated_columns  # Unpack the validated columns
+
+        if df.empty:
             return px.bar(title=title)
+
         return px.bar(df, x=x, y=y, title=title)
 
     def _create_scatter_chart(self, df: pd.DataFrame, x: str, y: str, color: str, title: str,
                               labels=None) -> px.scatter:
+        # Validate the graph data by passing df and the columns to _validate_graph_data
+        df, validated_columns = self._validate_graph_data(df, x, y, color)
+        x, y, color = validated_columns  # Unpack the validated columns
+
+        # If the DataFrame is empty after validation, return an empty scatter chart with just the title
+        if df.empty:
+            return px.scatter(title=title)
+
+        # Create the scatter chart with the given parameters
         scatter_chart_params = {
             'data_frame': df,
             'x': x,
@@ -529,10 +551,27 @@ class DashPageLayouts:
 
         return px.scatter(**scatter_chart_params)
 
-    def _create_pie_chart(self, df: pd.DataFrame, names: str, values: str, title: str, labels=None) -> px.pie:
-        if names is None or values is None or df.empty:
+    def _create_pie_chart(self, df: pd.DataFrame, names: str, values: str, title: str, labels=None, threshold_percentage=0.0) -> px.pie:
+        # Validate the graph data by passing df and the columns to _validate_graph_data
+        df, validated_columns = self._validate_graph_data(df, names, values)
+        names, values = validated_columns  # Unpack the validated columns
+
+        # If the DataFrame is empty after validation, return an empty pie chart with just the title
+        if df.empty:
             return px.pie(title=title)
 
+        # Calculate the total and the percentage for each slice
+        total = df[values].sum()
+        df['percentage'] = (df[values] / total) * 100
+
+        # Filter the DataFrame to only include slices above the threshold percentage
+        df = df[df['percentage'] >= threshold_percentage]
+
+        # If the DataFrame is empty after filtering, return an empty pie chart with just the title
+        if df.empty:
+            return px.pie(title=title)
+
+        # Create the pie chart with the given parameters
         pie_chart_params = {
             'data_frame': df,
             'names': names,
@@ -598,7 +637,7 @@ class DashPageLayouts:
 
             header = dbc.Button(
                 action,
-                id=f"group-{index}-toggle",
+                id={'type': 'toggle', 'index': index},
                 color="link",
                 n_clicks=0,
                 style={'text-align': 'left', 'width': '100%', 'padding': '10px', 'border': '1px solid #ddd'}
@@ -612,17 +651,11 @@ class DashPageLayouts:
                         html.Strong("Count: "), f"{desc[2]}"
                     ])) for desc in user_descriptions
                 ])),
-                id=f"group-{index}-collapse",
+                id={'type': 'collapse', 'index': index},
                 is_open=False
             )
 
             items.append(dbc.Card([header, body]))
-
-            self.dash_app.callback(
-                Output(f"group-{index}-collapse", "is_open"),
-                [Input(f"group-{index}-toggle", "n_clicks")],
-                [State(f"group-{index}-collapse", "is_open")]
-            )(lambda n, is_open: not is_open if n else is_open)
 
         return items
 
@@ -642,31 +675,51 @@ class DashPageLayouts:
 
     def _create_upload_component(self) -> html.Div:
         return html.Div([
-            dcc.Upload(
-                id='upload-json',
-                children=html.Div([
-                    'Drag and Drop or ',
-                    html.A('Select Files')
-                ]),
-                style={
-                    'width': '100%',
-                    'height': '60px',
-                    'lineHeight': '60px',
-                    'borderWidth': '1px',
-                    'borderStyle': 'dashed',
-                    'borderRadius': '5px',
-                    'textAlign': 'center',
-                    'margin': '10px 0'
-                },
-                multiple=False,  # Single file upload
-                accept='.json'  # Accept only JSON files
-            ),
-            html.Div(id='output-json-upload', style={'margin': '10px 0'}),
-            dbc.Checkbox(
-                id='default-data-source',
-                className="mb-3",
-                label="Default data source"
-            ),
-            dbc.Button("Submit", id='submit-button', color="primary", className="w-100", disabled=True),
-            html.Div(id='submit-status', style={'margin': '10px 0'})
+            dcc.Loading(
+                id='loading',
+                type='circle',
+                children=[
+                    dcc.Upload(
+                        id='upload-json',
+                        children=html.Div([
+                            'Drag and Drop or ',
+                            html.A('Select Files')
+                        ]),
+                        style={
+                            'width': '100%',
+                            'height': '60px',
+                            'lineHeight': '60px',
+                            'borderWidth': '1px',
+                            'borderStyle': 'dashed',
+                            'borderRadius': '5px',
+                            'textAlign': 'center',
+                            'margin': '10px 0'
+                        },
+                        multiple=False,  # Single file upload
+                        accept='.json'  # Accept only JSON files
+                    ),
+                    html.Div(id='output-json-upload', style={'margin': '10px 0'}),
+                    dbc.Checkbox(
+                        id='default-data-source',
+                        className="mb-0",
+                        label="Default data source"
+                    ),
+                    html.Div(
+                        "Default data source will be used when you start the program.",
+                        style={'margin': '0', 'padding': '0', 'fontSize': 'small', 'lineHeight': '1', 'marginLeft': '25px'}
+                    ),
+                    dbc.Button(
+                        "Submit",
+                        id='submit-button',
+                        color="primary",
+                        className="w-100",
+                        disabled=True,
+                        style={'marginTop': '30px'}
+                    ),
+                    html.Div(
+                        id='submit-status',
+                        style={'margin': '10px 0'}
+                    )
+                ]
+            )
         ])
