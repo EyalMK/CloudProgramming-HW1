@@ -25,14 +25,13 @@ class DataFrameHandler:
         self.alerts_df = pd.DataFrame()
         self.db_handler = db_handler
         self.initialize_df()
-        self.process_df()
 
     def initialize_df(self):
         try:
             data = self.db_handler.read_from_database(ONSHAPE_LOGS_PATH)  # OnShape logs path acts as the default
             # data source
             if data is not None:
-                self._dataframes_from_data(data)
+                self.handle_switch_log_source(data)
         except Exception as e:
             raise e
 
@@ -54,17 +53,21 @@ class DataFrameHandler:
             # Only update with new data if it is set to default or if there is no data processed yet
             if data and (collection_name == ONSHAPE_LOGS_PATH or self.raw_df is None):
                 # Process the newly uploaded data
-                self._dataframes_from_data(data, collection_source=collection_name)
-                self.process_df()  # Reprocess the DataFrame
+                self.handle_switch_log_source(data)
         except Exception as e:
             self.utils.logger.error(f"Error updating with new data: {str(e)}")
+
+    def handle_switch_log_source(self, data, file_name=None):
+        # Process the newly uploaded data
+        self._dataframes_from_data(data, file_name)
+        self.process_df()  # Reprocess the DataFrame
 
     def get_unread_alerts_count(self):
         if self.alerts_df.empty:
             return 0
         return self.alerts_df[self.alerts_df['Status'] == 'unread'].shape[0]
 
-    def get_preprocessed_graphs_dataframe(self):
+    def get_lightly_refined_graphs_dataframe(self):
         if self.df is not None:
             dataframe_copy = self.df.copy()
             dataframe_copy['Action'] = dataframe_copy['Description'].apply(self.utils.categorize_action)
@@ -104,7 +107,7 @@ class DataFrameHandler:
             start_date = max_date - timedelta(days=7)
         return max_date, min_date, start_date
 
-    def filter_dataframe_for_graphs(self, dataframe, selected_document, selected_user, start_date, end_date):
+    def filter_dataframe_for_graphs(self, dataframe, selected_document, selected_log, selected_user, start_time, end_time):
         filtered_df = dataframe
 
         if selected_document:
@@ -119,11 +122,11 @@ class DataFrameHandler:
             else:
                 filtered_df = filtered_df[filtered_df['User'] == selected_user]
 
-        if start_date and end_date:
-            filtered_df['Date'] = pd.to_datetime(filtered_df['Date'], errors='coerce')
-            start_date = pd.to_datetime(start_date)
-            end_date = pd.to_datetime(end_date)
-            filtered_df = filtered_df[(filtered_df['Date'] >= start_date) & (filtered_df['Date'] <= end_date)]
+        if start_time and end_time and filtered_df is not None:
+            filtered_df['Time'] = pd.to_datetime(filtered_df['Time'], errors='coerce')
+            start_date = pd.to_datetime(start_time)
+            end_date = pd.to_datetime(end_time)
+            filtered_df = filtered_df[(filtered_df['Time'] >= start_date) & (filtered_df['Time'] <= end_date)]
 
         # Group by date and count activities
         return filtered_df
@@ -186,10 +189,16 @@ class DataFrameHandler:
         df = dataframe.sort_values(by=['User', 'Time'])
         return df.groupby(['Action', 'User', 'Description']).size().reset_index(name='Count')
 
-    def _dataframes_from_data(self, data, collection_source=ONSHAPE_LOGS_PATH):
-        self.selected_log_path = collection_source
-        first_key = next(iter(data))
-        self.df = self.raw_df = pd.DataFrame(data[first_key]['data'])
+    def _dataframes_from_data(self, data, file_name=None):
+        data_key = None
+        if file_name:
+            for key, value in data.items():
+                if value['fileName'] == file_name:
+                    data_key = key
+                    break
+        if data_key is None:
+            data_key = next(iter(data))  # First key
+        self.df = self.raw_df = pd.DataFrame(data[data_key]['data'])
 
     def _convert_time_column(self, dataframe):
         # Ensure 'Time' column is properly parsed
