@@ -27,12 +27,6 @@ class DatabaseCollections(Enum):
     INDICES_WORDS = "/indices-words"
     BOT_PROMPTS = "/chatbot-patterns"
 
-
-# Database Paths
-ONSHAPE_LOGS_PATH = DatabaseCollections.ONSHAPE_LOGS.value
-UPLOADED_LOGS_PATH = DatabaseCollections.UPLOADED_LOGS.value
-GLOSSARY_WORDS_PATH = DatabaseCollections.GLOSSARY_WORDS.value
-
 # Action Map
 ACTION_MAP = {
     'undo': 'Undo',

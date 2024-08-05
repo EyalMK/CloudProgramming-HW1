@@ -5,7 +5,7 @@ from typing import Any
 
 from firebase import firebase
 
-from config.constants import ONSHAPE_LOGS_PATH, GLOSSARY_WORDS_PATH
+from config.constants import DatabaseCollections
 
 
 class DatabaseHandler:
@@ -39,7 +39,7 @@ class DatabaseHandler:
         try:
             # Clear the collection if it's the default collection
             # This is to prevent the database from storing duplicate defaults
-            if collection_name == ONSHAPE_LOGS_PATH:
+            if collection_name == DatabaseCollections.ONSHAPE_LOGS.value:
                 self.db.delete(collection_name, None)
                 self.logger.info(f"{collection_name} cleared successfully. Setting new default log...")
 

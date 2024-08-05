@@ -2,7 +2,7 @@
 import os
 from datetime import timedelta, datetime
 
-from config.constants import ONSHAPE_LOGS_PATH, UPLOADED_LOGS_PATH, DEFAULT_MAX_DATE, DEFAULT_MIN_DATE
+from config.constants import DatabaseCollections, DEFAULT_MAX_DATE, DEFAULT_MIN_DATE
 import pandas as pd
 
 
@@ -21,14 +21,14 @@ class DataFrameHandler:
         self.activity_over_time = []
         self.document_usage = []
         self.user_activity = []
-        self.selected_log_path = ONSHAPE_LOGS_PATH  # Default data source
+        self.selected_log_path = DatabaseCollections.ONSHAPE_LOGS.value  # Default data source
         self.alerts_df = pd.DataFrame()
         self.db_handler = db_handler
         self.initialize_df()
 
     def initialize_df(self):
         try:
-            data = self.db_handler.read_from_database(ONSHAPE_LOGS_PATH)  # OnShape logs path acts as the default
+            data = self.db_handler.read_from_database(DatabaseCollections.ONSHAPE_LOGS.value)  # OnShape logs path acts as the default
             # data source
             if data is not None:
                 self.handle_switch_log_source(data)
@@ -51,7 +51,7 @@ class DataFrameHandler:
             data = self.db_handler.read_from_database(collection_name)
             self._populate_uploaded_logs(data=data)
             # Only update with new data if it is set to default or if there is no data processed yet
-            if data and (collection_name == ONSHAPE_LOGS_PATH or self.raw_df is None):
+            if data and (collection_name == DatabaseCollections.ONSHAPE_LOGS.value or self.raw_df is None):
                 # Process the newly uploaded data
                 self.handle_switch_log_source(data)
         except Exception as e:
@@ -228,7 +228,7 @@ class DataFrameHandler:
     def _populate_uploaded_logs(self, data=None):
         data_to_process = data
         if data_to_process is None:
-            data_to_process = self.db_handler.read_from_database(UPLOADED_LOGS_PATH)
+            data_to_process = self.db_handler.read_from_database(DatabaseCollections.UPLOADED_LOGS.value)
         logs = ['Default Log']
         if data_to_process:
             for key in data_to_process:
