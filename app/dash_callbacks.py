@@ -92,7 +92,8 @@ class DashCallbacks:
             [Input('upload-json', 'contents'),
              Input('submit-button', 'n_clicks')],
             [State('upload-json', 'filename'),
-             State('default-data-source', 'value')]
+             State('default-data-source', 'value')],
+            prevent_initial_call='initial_duplicate'
         )
         def handle_file_upload_and_submit(contents, n_clicks, filename, default_data_source):
             ctx = dash.callback_context
@@ -174,7 +175,8 @@ class DashCallbacks:
         @self.dash_app.callback(
             [Output('alerts-list', 'children'),
              Output('alerts-count-badge', 'children', allow_duplicate=True)],
-            [Input('acknowledge-all-button', 'n_clicks')]
+            [Input('acknowledge-all-button', 'n_clicks')],
+            prevent_initial_call='initial_duplicate'
         )
         def update_alerts(n_clicks):
             # Always update the alerts list and badge count
