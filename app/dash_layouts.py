@@ -12,7 +12,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 
-
 class DashPageLayouts:
     def __init__(self, dash_app: dash.Dash, db_handler: 'DatabaseHandler', utils):
         self.dash_app = dash_app
@@ -260,7 +259,8 @@ class DashPageLayouts:
                                               color='Action',
                                               title='Repeated Actions Analysis by User',
                                               orientation='v',
-                                              labels={'User': 'User', 'Count': 'Repetition Count', 'Action': 'Action Description'})
+                                              labels={'User': 'User', 'Count': 'Repetition Count',
+                                                      'Action': 'Action Description'})
 
     def create_advanced_basic_actions_graph(self, dataframe):
         return self._create_stacked_bar_chart(df=dataframe,
@@ -269,7 +269,8 @@ class DashPageLayouts:
                                               color='Action Type',
                                               title='Advanced vs. Basic Actions',
                                               grid=False,
-                                              labels={'User': 'User', 'Action Count': 'Action Count', 'Action Type': 'Action Type'},
+                                              labels={'User': 'User', 'Action Count': 'Action Count',
+                                                      'Action Type': 'Action Type'},
                                               orientation='h')
 
     def create_action_frequency_scatter_graph(self, dataframe):
@@ -287,7 +288,8 @@ class DashPageLayouts:
                                               color='Day',
                                               orientation='v',
                                               title='Work Patterns Over Different Time Intervals',
-                                              labels={'Time Interval': 'Time of Day', 'Action Count': 'Action Count', 'Day': 'Day of Week'})
+                                              labels={'Time Interval': 'Time of Day', 'Action Count': 'Action Count',
+                                                      'Day': 'Day of Week'})
 
     def create_header(self):
         current_date = datetime.now().strftime('%d-%m-%Y')
@@ -662,38 +664,51 @@ class DashPageLayouts:
 
     def _create_upload_component(self) -> html.Div:
         return html.Div([
-            dcc.Upload(
-                id='upload-json',
-                children=html.Div([
-                    'Drag and Drop or ',
-                    html.A('Select Files')
-                ]),
-                style={
-                    'width': '100%',
-                    'height': '60px',
-                    'lineHeight': '60px',
-                    'borderWidth': '1px',
-                    'borderStyle': 'dashed',
-                    'borderRadius': '5px',
-                    'textAlign': 'center',
-                    'margin': '10px 0'
-                },
-                multiple=False,  # Single file upload
-                accept='.json'  # Accept only JSON files
-            ),
             dcc.Loading(
                 id='loading',
                 type='circle',
                 children=[
+                    dcc.Upload(
+                        id='upload-json',
+                        children=html.Div([
+                            'Drag and Drop or ',
+                            html.A('Select Files')
+                        ]),
+                        style={
+                            'width': '100%',
+                            'height': '60px',
+                            'lineHeight': '60px',
+                            'borderWidth': '1px',
+                            'borderStyle': 'dashed',
+                            'borderRadius': '5px',
+                            'textAlign': 'center',
+                            'margin': '10px 0'
+                        },
+                        multiple=False,  # Single file upload
+                        accept='.json'  # Accept only JSON files
+                    ),
                     html.Div(id='output-json-upload', style={'margin': '10px 0'}),
                     dbc.Checkbox(
                         id='default-data-source',
-                        className="mb-3",
+                        className="mb-0",
                         label="Default data source"
                     ),
-                    dbc.Button("Submit", id='submit-button', color="primary", className="w-100", disabled=True),
-                    html.Div(id='submit-status', style={'margin': '10px 0'})
+                    html.Div(
+                        "Default data source will be used when you start the program.",
+                        style={'margin': '0', 'padding': '0', 'fontSize': 'small', 'lineHeight': '1', 'marginLeft': '25px'}
+                    ),
+                    dbc.Button(
+                        "Submit",
+                        id='submit-button',
+                        color="primary",
+                        className="w-100",
+                        disabled=True,
+                        style={'marginTop': '30px'}
+                    ),
+                    html.Div(
+                        id='submit-status',
+                        style={'margin': '10px 0'}
+                    )
                 ]
             )
         ])
-
