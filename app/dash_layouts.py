@@ -715,72 +715,75 @@ class DashPageLayouts:
         Depending on the action type, this method generates a list of `dbc.Card` components that display actions in a
         collapsible format.
 
-        Parameters: actions (pd.DataFrame): The DataFrame containing action data. It should include columns relevant
-        to the action type. action_type (str): The type of actions to display. It can be either 'repeated_actions' or
-        'advanced_basic_actions'.
+        Parameters:
+            actions: The DataFrame containing action data. It should include columns relevant to the action type.
+            action_type: The type of action to display. It can be either 'repeated_actions' or 'advanced_basic_actions'.
 
         Returns:
-            List[dbc.Card]: A list of Dash Bootstrap Components cards, each containing a header and collapsible body.
+            A list of Dash Bootstrap Components cards, each containing a header and collapsible body.
         """
+
+        def create_header(button_label, card_id):
+            """
+            Creates a header button for the collapsible card.
+
+            Parameters:
+                button_label: The label for the button.
+                card_id: The index of the card used for creating a unique ID.
+
+            Returns:
+                A Dash Bootstrap Components Button configured as a collapsible card header.
+            """
+            return dbc.Button(
+                button_label,
+                id={'type': 'toggle', 'index': card_id, 'category': action_type},
+                color="link",
+                n_clicks=0,
+                style={'text-align': 'left', 'width': '100%', 'padding': '10px', 'border': '1px solid #ddd'}
+            )
+
+        def create_body(description_data, card_id):
+            """
+            Creates the body for the collapsible card.
+
+            Parameters:
+                description_data: List of descriptions to display in the collapsible body.
+                card_id: The index of the card used for creating a unique ID.
+
+            Returns:
+                A Dash Bootstrap Components Collapse containing the card body.
+            """
+            return dbc.Collapse(
+                dbc.CardBody(html.Ul([
+                    html.Li(html.Span([
+                        html.Strong("User: "), f"{desc[0]}, ",
+                        html.Strong("Action: "), f"{desc[1]}, ",
+                        html.Strong("Count: "), f"{desc[2]}"
+                    ])) for desc in description_data
+                ])),
+                id={'type': 'collapse', 'index': card_id, 'category': action_type},
+                is_open=False
+            )
+
         items = []
         if action_type == 'repeated_actions':
-            for index, (action, group) in enumerate(actions.groupby('Action')):
+            for idx, (action_key, group) in enumerate(actions.groupby('Action')):
                 user_descriptions = group[['User', 'Description', 'Count']].values.tolist()
-
-                header = dbc.Button(
-                    action,
-                    id={'type': 'toggle', 'index': index, 'category': action_type},
-                    color="link",
-                    n_clicks=0,
-                    style={'text-align': 'left', 'width': '100%', 'padding': '10px', 'border': '1px solid #ddd'}
-                )
-
-                body = dbc.Collapse(
-                    dbc.CardBody(html.Ul([
-                        html.Li(html.Span([
-                            html.Strong("User: "), f"{desc[0]}, ",
-                            html.Strong("Action: "), f"{desc[1]}, ",
-                            html.Strong("Count: "), f"{desc[2]}"
-                        ])) for desc in user_descriptions
-                    ])),
-                    id={'type': 'collapse', 'index': index, 'category': action_type},
-                    is_open=False
-                )
-
+                header = create_header(action_key, idx)
+                body = create_body(user_descriptions, idx)
                 items.append(dbc.Card([header, body]))
 
         elif action_type == 'advanced_basic_actions':
             advanced_actions = actions[actions['Action Type'] == 'Advanced']
             basic_actions = actions[actions['Action Type'] == 'Basic']
-
             categories = {
                 'Advanced': advanced_actions,
                 'Basic': basic_actions
             }
-
-            for index, (category, group) in enumerate(categories.items()):
+            for idx, (category_key, group) in enumerate(categories.items()):
                 action_descriptions = group[['User', 'Action', 'Action Count']].values.tolist()
-
-                header = dbc.Button(
-                    category,
-                    id={'type': 'toggle', 'index': index, 'category': action_type},
-                    color="link",
-                    n_clicks=0,
-                    style={'text-align': 'left', 'width': '100%', 'padding': '10px', 'border': '1px solid #ddd'}
-                )
-
-                body = dbc.Collapse(
-                    dbc.CardBody(html.Ul([
-                        html.Li(html.Span([
-                            html.Strong("User: "), f"{desc[0]}, ",
-                            html.Strong("Action: "), f"{desc[1]}, ",
-                            html.Strong("Count: "), f"{desc[2]}"
-                        ])) for desc in action_descriptions
-                    ])),
-                    id={'type': 'collapse', 'index': index, 'category': action_type},
-                    is_open=False
-                )
-
+                header = create_header(category_key, idx)
+                body = create_body(action_descriptions, idx)
                 items.append(dbc.Card([header, body]))
 
         return items
