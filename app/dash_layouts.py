@@ -21,7 +21,7 @@ class DashPageLayouts:
         self.lightly_refined_df = pd.DataFrame([])
         self.graph_processed_df = pd.DataFrame([])
         self.uploaded_json = None
-        self.data_source_title = "Default Log"
+        self.data_source_title = self.df_handler.selected_log_name
         self.utils = utils
         self.define_layout()
         self.create_callbacks()
@@ -124,7 +124,7 @@ class DashPageLayouts:
                                       icon="fas fa-upload"),
                                   self._create_styled_list_item(
                                       "Select Default Log:",
-                                      "If you want the uploaded log to be used as the default for analysis, simply choose the 'Set as Default' option.",
+                                      "Mark An uploaded log to be used as the default for analysis, using the 'Default Data Source' checkbox.",
                                       icon="fas fa-check"),
                                   self._create_styled_list_item(
                                       "Explore Visualizations:",
@@ -435,6 +435,9 @@ class DashPageLayouts:
         graph_options = self.utils.get_supported_graphs()
         default_graph_options = [option['value'] for option in graph_options]
 
+        uploaded_logs_options = self.df_handler.filters_data['uploaded-logs']
+        default_log_option = uploaded_logs_options[0] if selected_log_name == "None" and len(uploaded_logs_options) > 0 else selected_log_name
+
         return html.Div([
             html.Div(id='log-switch-trigger', style={'display': 'none'}),
             self._create_filter_row('document-dropdown', 'Select Document', self.df_handler.filters_data['documents'],
@@ -446,9 +449,9 @@ class DashPageLayouts:
             dbc.Row([
                 dbc.Col(
                     dcc.Dropdown(id='logs-dropdown',
-                                 options=self.df_handler.filters_data['uploaded-logs'],
+                                 options=uploaded_logs_options,
                                  placeholder='Select Log',
-                                 value=selected_log_name),
+                                 value=default_log_option),
                     width=7)
             ], className="mb-3"),
             dbc.Row([

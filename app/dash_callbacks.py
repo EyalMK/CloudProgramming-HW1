@@ -352,6 +352,8 @@ class DashCallbacks:
                         self.utils.logger.info(f"Uploaded JSON: {processed_filename} of size: {size_kb:.2f} KB")
 
                         # Notify DataFrameHandler to update its state
+                        if default_data_source:
+                            self.df_handler.missing_default_log = False
                         self.df_handler.update_with_new_data(collection_name, processed_filename)
 
                         return dash.no_update, dash.no_update, "File has been uploaded successfully.", str(

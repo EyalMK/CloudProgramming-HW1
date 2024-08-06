@@ -47,7 +47,7 @@ class App:
                                       external_stylesheets=[dbc.themes.BOOTSTRAP, FONT_AWESOME_CDN])
             self.dash_app.config.suppress_callback_exceptions = True
             self.dash_page_layouts = DashPageLayouts(self.dash_app, self.db_handler, self.utils)
-            # NGROK tunnel outsourcing from Colab, to simulate debugging with teammates via Colab. :)
+            # NGROK tunnel outsourcing from Colab.
             self._initialize_server()
             self._setup_routes()
         except Exception as e:

@@ -40,6 +40,7 @@ class DataFrameHandler:
             utils (Utilities): An instance of Utilities for various utility functions.
         """
         self.loaded_df = None
+        self.missing_default_log = False
         self.max_date = datetime.strptime(DEFAULT_MAX_DATE, '%d-%m-%Y')
         self.min_date = datetime.strptime(DEFAULT_MIN_DATE, '%d-%m-%Y')
         self.utils = utils
@@ -54,7 +55,7 @@ class DataFrameHandler:
         self.document_usage = []
         self.user_activity = []
         self.log_cache = {}
-        self.selected_log_name = DatabaseCollections.ONSHAPE_LOGS.value  # Default data source
+        self.selected_log_name = "None"
         self.alerts_df = pd.DataFrame()
         self.db_handler = db_handler
         self.initialize_df()
@@ -104,6 +105,7 @@ class DataFrameHandler:
             if collection_name == DatabaseCollections.ONSHAPE_LOGS.value or self.loaded_df is None:
                 # Process the newly uploaded data
                 self.handle_switch_log_source(collection_name, file_name)
+            self._populate_uploaded_logs()
         except Exception as e:
             self.utils.logger.error(f"Error updating with new data: {str(e)}")
 
@@ -115,7 +117,9 @@ class DataFrameHandler:
             collection_name (str): The collection name containing the data belonging to file_name.
             file_name (str): The name of the file containing the new data.
         """  # Process the newly uploaded data
-        if file_name in self.log_cache:
+        # Don't cache default data source, since it can be overridden later (the overriding file is also called default.json,
+        # a solution would be to add key field to log_cache where key is the key from Firebase collections).
+        if file_name in self.log_cache and file_name != "default.json":
             data = self.log_cache[file_name]
             self._dataframes_from_data(data, file_name)
             self.utils.logger.info(f"Loaded {file_name} from cache.")
@@ -131,6 +135,7 @@ class DataFrameHandler:
                 if collection_name == DatabaseCollections.UPLOADED_LOGS.value:
                     self.utils.logger.error(f"No data found for {file_name} in {collection_name}.")
                 else:
+                    self.missing_default_log = True
                     self.utils.logger.warn(f"No default source log data found for graph initialization.")
                 data = {}
                 self._dataframes_from_data(data, file_name)
@@ -425,12 +430,13 @@ class DataFrameHandler:
                     self.selected_log_name = file_name
                     data_key = key
                     break
-        if data_key is None and hasattr(data, '__iter__') and len(data) > 0:
-            self.selected_log_name = 'Default Log'
-            data_key = next(iter(data))  # First key
-        else:
-            self.loaded_df = None
-            return
+        if data_key is None:
+            if hasattr(data, '__iter__') and len(data) > 0:
+                self.selected_log_name = 'Default Log'
+                data_key = next(iter(data))  # First key
+            else:
+                self.loaded_df = None
+                return
         self.loaded_df = pd.DataFrame(data[data_key]['data'])
 
     @staticmethod
@@ -455,20 +461,16 @@ class DataFrameHandler:
         if 'Time' in self.loaded_df.columns:
             self.loaded_df['Date'] = self.loaded_df['Time'].dt.date
 
-    def _populate_uploaded_logs(self, data=None):
+    def _populate_uploaded_logs(self):
         """
         Populate the uploaded logs filter with file names from the database.
 
         This method reads log data from the database and updates the 'uploaded-logs' filter
         with the file names of the uploaded logs.
-
-        Args:
-            data (dict, optional): The data to process. If None, reads data from the database.
         """
-        data_to_process = data
-        if data_to_process is None:
-            data_to_process = self.db_handler.read_from_database(DatabaseCollections.UPLOADED_LOGS.value)
-        logs = ['Default Log']
+
+        data_to_process = self.db_handler.read_from_database(DatabaseCollections.UPLOADED_LOGS.value)
+        logs = ['Default Log'] if not self.missing_default_log else []
         if data_to_process:
             for key in data_to_process:
                 logs.append(data_to_process[key]['fileName'])
@@ -521,16 +523,18 @@ class DataFrameHandler:
         redo_undo_df = self.loaded_df[self.loaded_df['Description'].str.contains('Undo|Redo', case=False)].copy()
 
         # Set a time window for detecting high frequency of actions
-        redo_undo_df['TimeWindow'] = redo_undo_df['Time'].dt.floor(os.environ["ALERT_TIMEWINDOW"])
+        configured_time_window = os.environ["ALERT_TIMEWINDOW"]
+        redo_undo_df['TimeWindow'] = redo_undo_df['Time'].dt.floor(configured_time_window)
         grouped = redo_undo_df.groupby(['User', 'Document', 'TimeWindow']).size().reset_index(name='Count')
 
         # Filter the groups that exceed the threshold
-        alerts = grouped[grouped['Count'] > int(os.environ["UNDO_REDO_THRESHOLD"])].copy()
+        configured_threshold = int(os.environ["UNDO_REDO_THRESHOLD"])
+        alerts = grouped[grouped['Count'] > configured_threshold].copy()
 
         # Prepare the alerts DataFrame
         if not alerts.empty:
             alerts['Time'] = alerts['TimeWindow'].dt.strftime('%H:%M:%S %d-%m-%Y')
-            alerts['Description'] = 'Many redos/undos detected within a short time period'
+            alerts['Description'] = f'More than {configured_threshold} redos/undos detected within {configured_time_window}'
             alerts['Status'] = 'unread'
             self.alerts_df = alerts[['Time', 'User', 'Description', 'Document', 'Status']]
         else:
