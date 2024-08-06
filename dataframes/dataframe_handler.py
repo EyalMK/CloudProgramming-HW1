@@ -362,6 +362,25 @@ class DataFrameHandler:
 
     @staticmethod
     def prepare_data_for_collapsible_list(dataframe, list_type=''):
+        """
+        Prepare data for a collapsible list based on the specified type.
+
+        This method processes the provided data frame and returns a summary data frame that can be used
+        to generate a collapsible list in the user interface. The data is grouped based on the type of list
+        requested.
+
+        Parameters:
+            dataframe (pd.DataFrame): The input data frame to process.
+            list_type (str): The type of collapsible list to prepare.
+                             Possible values are:
+                             - 'repeated_actions': Prepares a list of actions repeated by users.
+                             - Default: Groups by user, action, and action type.
+
+        Returns:
+            pd.DataFrame: A data frame grouped and aggregated based on the specified list type.
+                          - For 'repeated_actions': Groups by Action, User, and Description with counts.
+                          - For other types: Groups by User, Action, and Action Type with counts.
+        """
         if list_type == 'repeated_actions':
             df = dataframe.sort_values(by=['User', 'Time'])
             return df.groupby(['Action', 'User', 'Description']).size().reset_index(name='Count')
