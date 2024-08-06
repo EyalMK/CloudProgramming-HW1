@@ -57,6 +57,25 @@ class Utilities:
 
     @staticmethod
     def get_supported_graphs():
+        """
+        Get a list of supported graph types.
+
+        Returns:
+            List[Dict[str, str]]: A list of dictionaries where each dictionary represents a supported graph type.
+                                  Each dictionary contains two keys:
+                                  - 'label': The display name of the graph type.
+                                  - 'value': The internal value used for identifying the graph type.
+
+        Example:
+            >>> App.get_supported_graphs()
+            [
+                {'label': 'Action Sequence by User', 'value': 'Action Sequence by User'},
+                {'label': 'Work Patterns Over Time', 'value': 'Work Patterns Over Time'},
+                {'label': 'Project Time Distribution', 'value': 'Project Time Distribution'},
+                {'label': 'Repeated Actions By User', 'value': 'Repeated Actions By User'},
+                {'label': 'Advanced vs. Basic Actions', 'value': 'Advanced vs. Basic Actions'},
+            ]
+        """
         return [
             {'label': 'Action Sequence by User', 'value': 'Action Sequence by User'},
             {'label': 'Work Patterns Over Time', 'value': 'Work Patterns Over Time'},
