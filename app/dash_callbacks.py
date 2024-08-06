@@ -62,7 +62,15 @@ class DashCallbacks:
              Output('grouped-actions-div', 'children'),
              Output('grouped-actions-divergence', 'children'),
              Output('data-source-title', 'children'),
-             Output('alerts-count-badge', 'children', allow_duplicate=True)],
+             Output('alerts-count-badge', 'children', allow_duplicate=True),
+             Output('start-time', 'value'),
+             Output('start-time', 'min'),
+             Output('start-time', 'max'),
+             Output('end-time', 'value'),
+             Output('end-time', 'min'),
+             Output('end-time', 'max'),
+             Output('processed-df', 'data'),
+             Output('pre-processed-df', 'data')],
             [Input('apply-filters', 'n_clicks')],
             [State('processed-df', 'data'),
              dash.dependencies.State('document-dropdown', 'value'),
@@ -74,6 +82,11 @@ class DashCallbacks:
         )
         def update_all_graphs(n_clicks, data, selected_document, selected_log, selected_user, start_time, end_time):
             dataframe = pd.DataFrame(data)
+            value_start_time = start_time
+            value_end_time = end_time
+            full_range_start_time = self.df_handler.min_date
+            full_range_end_time = self.df_handler.max_date
+
             # If a log is selected, update dataframe handler attributes with the new log data
             # And then update processed-df and pre-processed-df attributes in the graphs_layout
             if selected_log and self.df_handler.selected_log_name != selected_log:
@@ -82,19 +95,21 @@ class DashCallbacks:
                     DatabaseCollections.ONSHAPE_LOGS.value if is_default_source else DatabaseCollections.UPLOADED_LOGS.value)
                 if collection_data is None:
                     self.utils.logger.error(f"No log data available for selected log: {selected_log}")
-                    return [dash.no_update] * 8
+                    return [dash.no_update] * 17
                 self.df_handler.handle_switch_log_source(collection_data, file_name=selected_log)
-                dataframe, _ = self.page_layouts.handle_initial_graph_dataframes()
+                dataframe = self.page_layouts.handle_initial_graph_dataframes()
+                full_range_start_time = value_start_time = self.df_handler.min_date  # Get new dates
+                full_range_end_time = value_end_time = self.df_handler.max_date
 
             filtered_df = self.df_handler.filter_dataframe_for_graphs(dataframe, selected_document,
-                                                                      selected_user, start_time, end_time)
+                                                                      selected_user, value_start_time, value_end_time)
 
             if filtered_df is None:
-                return [dash.no_update] * 8
+                return [dash.no_update] * 17
 
             ctx = dash.callback_context
             if not ctx.triggered:
-                return [dash.no_update] * 8
+                return [dash.no_update] * 17
             else:
                 input_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
@@ -107,8 +122,8 @@ class DashCallbacks:
                     filtered_df,
                     self.df_handler.setup_action_frequency_scatter_graph_dataframe,
                     self.page_layouts.create_action_frequency_scatter_graph,
-                    start_time,
-                    end_time
+                    value_start_time,
+                    value_end_time
                 )
                 fig_work_patterns = self._update_graph(
                     filtered_df,
@@ -149,7 +164,15 @@ class DashCallbacks:
                 collapsible_list, \
                 collapsible_actions_list, \
                 data_source_title, \
-                str(self.df_handler.get_unread_alerts_count())
+                str(self.df_handler.get_unread_alerts_count()), \
+                value_start_time, \
+                full_range_start_time, \
+                full_range_end_time, \
+                value_end_time, \
+                full_range_start_time, \
+                full_range_end_time,\
+                self.page_layouts.graph_processed_df.to_dict(), \
+                self.page_layouts.lightly_refined_df.to_dict()
 
         # Combined callback to handle file upload and submit
         @self.dash_app.callback(

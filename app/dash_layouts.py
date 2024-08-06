@@ -2,7 +2,7 @@ from datetime import datetime
 
 from app.dash_callbacks import DashCallbacks
 from dataframes.dataframe_handler import DataFrameHandler
-from config.constants import START_DATE, END_DATE, PROJECT_NAME, DatabaseCollections
+from config.constants import PROJECT_NAME, DatabaseCollections
 import dash
 from dash import dcc, dash_table, Output, Input, State
 from dash import html
@@ -56,7 +56,7 @@ class DashPageLayouts:
         ])
 
     def graphs_layout(self):
-        _, _ = self.handle_initial_graph_dataframes()
+        self.handle_initial_graph_dataframes()
         return self._create_layout("Advanced Team Activity and Analysis Graphs", [
             html.H4(id='data-source-title', children=f"Current Data Source - {self.data_source_title}",
                     className="mb-4"),
@@ -297,7 +297,7 @@ class DashPageLayouts:
     def handle_initial_graph_dataframes(self):
         self.lightly_refined_df = self.df_handler.get_lightly_refined_graphs_dataframe()
         self.graph_processed_df = self.df_handler.process_graphs_layout_dataframe(dataframe=self.lightly_refined_df)
-        return self.graph_processed_df, self.lightly_refined_df
+        return self.graph_processed_df
 
     def create_header(self):
         current_date = datetime.now().strftime('%d-%m-%Y')
@@ -393,10 +393,11 @@ class DashPageLayouts:
         # If the selected log path is not uploaded logs, then the default value for the logs dropdown should be empty
         # Otherwise, it should be the first uploaded log
         selected_log_name = self.df_handler.selected_log_name
-
-        now = datetime.now().strftime('%Y-%m-%dT%H:%M')
+        max_date = self.df_handler.max_date
+        min_date = self.df_handler.min_date
 
         return html.Div([
+            html.Div(id='log-switch-trigger', style={'display': 'none'}),
             self._create_filter_row('document-dropdown', 'Select Document', self.df_handler.filters_data['documents'],
                                     'select-all-documents', 'clear-all-documents'),
             self._create_filter_row('user-dropdown', 'Select User', self.df_handler.filters_data['users'],
@@ -415,15 +416,15 @@ class DashPageLayouts:
                 dbc.Col(html.Div([
                     html.Label("Start Time"),
                     dcc.Input(id='start-time', type='datetime-local',
-                              min=datetime.strptime(START_DATE, '%d-%m-%Y').strftime('%Y-%m-%dT%H:%M'), max=now,
-                              value=datetime.strptime(START_DATE, '%d-%m-%Y').strftime('%Y-%m-%dT%H:%M'),
+                              min=min_date, max=max_date,
+                              value=min_date,
                               className='form-control')
                 ]), width=6),
                 dbc.Col(html.Div([
                     html.Label("End Time"),
                     dcc.Input(id='end-time', type='datetime-local',
-                              min=datetime.strptime(START_DATE, '%d-%m-%Y').strftime('%Y-%m-%dT%H:%M'), max=now,
-                              value=now, className='form-control')
+                              min=min_date, max=max_date,
+                              value=max_date, className='form-control')
                 ]), width=6)
             ], className="mb-3"),
             dbc.Button("Apply Filters", id='apply-filters', color="primary", className="w-100")

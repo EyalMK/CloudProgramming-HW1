@@ -35,6 +35,8 @@ class DataFrameHandler:
         """
         self.raw_df = None
         self.df = None
+        self.max_date = datetime.strptime(DEFAULT_MAX_DATE, '%d-%m-%Y')
+        self.min_date = datetime.strptime(DEFAULT_MIN_DATE, '%d-%m-%Y')
         self.utils = utils
         self.filters_data = {
             'documents': [],
@@ -106,6 +108,7 @@ class DataFrameHandler:
         """  # Process the newly uploaded data
         self._dataframes_from_data(data, file_name)
         self.process_df()  # Reprocess the DataFrame
+        self.set_max_min_dates()
 
     def get_unread_alerts_count(self):
         """
@@ -158,34 +161,25 @@ class DataFrameHandler:
 
         return dataframe
 
-    @staticmethod
-    def get_max_min_dates(dataframe):
+    def set_max_min_dates(self):
         """
-        Get the maximum and minimum dates from the data frame, and determine the default start date range.
-
-        Parameters:
-            dataframe (pd.DataFrame): The data frame to analyze.
-
-        Returns:
-            tuple: The maximum date, minimum date, and the default start date.
+        Set the maximum and minimum dates from the data frame.
         """
+        dataframe = self.raw_df.copy()
         if dataframe is not None and not dataframe.empty:
             # Calculate time spent on each project (Tab) regardless of the user
             dataframe['Time Diff'] = dataframe.groupby('Tab')['Time'].diff().dt.total_seconds()
 
             # Determine the latest date and set the default range to the last 7 days
-            max_date = dataframe['Time'].max()
-            min_date = dataframe['Time'].min()
-            start_date = max_date - timedelta(days=7)
-        else:
-            # If dataframe is None or empty, use default values
-            max_date = datetime.strptime(DEFAULT_MAX_DATE, '%d-%m-%Y')
-            min_date = datetime.strptime(DEFAULT_MIN_DATE, '%d-%m-%Y')
-            start_date = max_date - timedelta(days=7)
-        return max_date, min_date, start_date
+            self.max_date = dataframe['Time'].max().strftime('%Y-%m-%dT%H:%M')
+            self.min_date = dataframe['Time'].min().strftime('%Y-%m-%dT%H:%M')
+            return
 
-    @staticmethod
-    def filter_dataframe_for_graphs(dataframe, selected_document, selected_user, start_time, end_time):
+        # If dataframe is None or empty, use default values
+        self.max_date = datetime.strptime(DEFAULT_MAX_DATE, '%d-%m-%Y').strftime('%Y-%m-%dT%H:%M')
+        self.min_date = datetime.strptime(DEFAULT_MIN_DATE, '%d-%m-%Y').strftime('%Y-%m-%dT%H:%M')
+
+    def filter_dataframe_for_graphs(self, dataframe, selected_document, selected_user, start_time, end_time):
         """
         Filter the data frame for graph data based on selected document, log, user, and time range.
 
@@ -218,7 +212,6 @@ class DataFrameHandler:
             start_date = pd.to_datetime(start_time)
             end_date = pd.to_datetime(end_time)
             filtered_df = filtered_df[(filtered_df['Time'] >= start_date) & (filtered_df['Time'] <= end_date)]
-
         # Group by date and count activities
         return filtered_df
 
