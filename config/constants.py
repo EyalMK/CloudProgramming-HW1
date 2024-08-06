@@ -1,7 +1,7 @@
 # Constants and Enums
 import os
 
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 from enum import Enum
 
 # General Constants
@@ -27,6 +27,7 @@ class DatabaseCollections(Enum):
     GLOSSARY_WORDS = "/base-glossary-words"
     INDICES_WORDS = "/indices-words"
     BOT_PROMPTS = "/chatbot-patterns"
+
 
 # Action Map
 ACTION_MAP = {
