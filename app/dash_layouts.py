@@ -710,6 +710,12 @@ class DashPageLayouts:
 
     @staticmethod
     def create_footer():
+        """
+        Creates the footer component for the application.
+
+        Returns:
+            dbc.Navbar: The footer component with copyright information.
+        """
         return dbc.Navbar(
             dbc.Container([
                 dbc.Row([
@@ -723,6 +729,16 @@ class DashPageLayouts:
         )
 
     def define_layout(self):
+        """
+        Defines the layout for the Dash application.
+
+        Sets the layout to include:
+        - A header created by `create_header()`.
+        - A container with a side menu and a content area where pages will be displayed.
+        - A footer created by `create_footer()`.
+
+        The layout is structured to fit within the full viewport height and handle overflow appropriately.
+        """
         self.dash_app.layout = html.Div([
             self.create_header(),
             dbc.Container([
@@ -738,6 +754,17 @@ class DashPageLayouts:
 
     @staticmethod
     def _create_layout(title: str, children: list, style: dict = None) -> dbc.Container:
+        """
+        Creates a layout container for the Dash application.
+
+        Args:
+            title (str): The title to be displayed at the top of the layout.
+            children (list): The list of Dash components to be included in the layout.
+            style (dict, optional): Additional styling for the container. Defaults to None.
+
+        Returns:
+            dbc.Container: A Dash Bootstrap Components container with the specified layout.
+        """
         return dbc.Container([
             dbc.Row([
                 dbc.Col(
@@ -750,6 +777,17 @@ class DashPageLayouts:
 
     @staticmethod
     def _create_card(title: str, content: html, width: int) -> dbc.Col:
+        """
+        Creates a styled card component with a header and body content.
+
+        Parameters:
+            title (str): The title displayed in the card header.
+            content (html): The content displayed in the card body.
+            width (int): The width of the card column.
+
+        Returns:
+            dbc.Col: A Bootstrap column containing the card.
+        """
         return dbc.Col(dbc.Card([
             dbc.CardHeader(title),
             dbc.CardBody([content])
