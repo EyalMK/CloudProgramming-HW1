@@ -5,7 +5,6 @@ import pandas as pd
 
 from dash import MATCH, dcc
 from dash.dependencies import Input, Output, State
-from app.dash_layouts import DashPageLayouts
 from chatbot.chat_bot import ChatBot
 from config.constants import DatabaseCollections
 from database.db_handler import DatabaseHandler
