@@ -316,6 +316,25 @@ class DashCallbacks:
             prevent_initial_call='initial_duplicate'
         )
         def handle_file_upload_and_submit(contents, n_clicks, filename, default_data_source):
+            """
+            Handle file upload and submission actions.
+
+            This function processes the uploaded JSON file, validates its content, and updates the necessary
+            components and data handlers based on the file's content and the user actions.
+
+            Parameters:
+                contents (str): Base64-encoded content of the uploaded file.
+                n_clicks (int): Number of clicks on the submit button.
+                filename (str): The name of the uploaded file.
+                default_data_source (bool): Flag indicating if the file is the default data source.
+
+            Returns:
+                Tuple: Contains updated values for:
+                    - output-json-upload (str): Status message for the uploaded file.
+                    - submit-button (bool): Button disabled state.
+                    - submit-status (str): Status message after submission.
+                    - alerts-count-badge (str): Count of unread alerts.
+            """
             ctx = dash.callback_context
             if not ctx.triggered:
                 return "No file uploaded.", True, '', dash.no_update  # Initial state
@@ -361,7 +380,6 @@ class DashCallbacks:
 
                         self.utils.logger.info(f"Uploaded JSON: {processed_filename} of size: {size_kb:.2f} KB")
 
-                        # Notify DataFrameHandler to update its state
                         if default_data_source:
                             self.df_handler.missing_default_log = False
                         self.df_handler.update_with_new_data(collection_name, processed_filename)
@@ -381,6 +399,16 @@ class DashCallbacks:
             [State("input", "value")]
         )
         def search_term_in_glossary(n_clicks, value):
+            """
+            Callback function to search for a term in the glossary and display the results.
+
+            Parameters:
+            - n_clicks (int): Number of times the search button has been clicked.
+            - value (str): The search term entered by the user.
+
+            Returns:
+            - str or html.Div: The results of the search or a message indicating no term was found.
+            """
             if n_clicks > 0 and value:
                 results = self.search_engine.perform_search(value)
                 if results:
@@ -404,6 +432,17 @@ class DashCallbacks:
             prevent_initial_call='initial_duplicate'
         )
         def update_alerts(n_clicks):
+            """
+            Callback function to update the alerts list and badge count when the 'acknowledge-all' button is clicked.
+
+            Parameters:
+            - n_clicks (int): Number of times the 'acknowledge-all' button has been clicked.
+
+            Returns:
+            - tuple: A tuple containing:
+                - alerts_list (html.Div): The updated alerts list displayed in the UI.
+                - unread_alerts_count (str): The count of unread alerts to be displayed in the badge.
+            """
             # Always update the alerts list and badge count
             alerts_list, unread_alerts_count = self.page_layouts.create_alerts_list()
 
@@ -420,6 +459,18 @@ class DashCallbacks:
             [State('chat-input', 'value'), State('chat-history', 'children')]
         )
         def update_chat(n_clicks, n_submit, user_input, chat_history):
+            """
+            Callback function to update the chat history with new messages when the user sends input.
+
+            Parameters:
+            - n_clicks (int): Number of times the 'send-button' has been clicked.
+            - n_submit (int): Number of times the 'chat-input' has been submitted.
+            - user_input (str): The text input from the user.
+            - chat_history (str): The current chat history displayed in the UI.
+
+            Returns:
+            - str: The updated chat history with the new user input and the bot's response.
+            """
             if (n_clicks is None and n_submit is None) or user_input is None or user_input.strip() == "":
                 return chat_history
 
@@ -432,6 +483,17 @@ class DashCallbacks:
             [Input('send-button', 'n_clicks'), Input('chat-input', 'n_submit')]
         )
         def clear_input(n_clicks, n_submit):
+            """
+            Callback function to clear the chat input field when the 'send-button' is clicked
+            or the 'chat-input' field is submitted.
+
+            Parameters:
+            - n_clicks (int): Number of times the 'send-button' has been clicked.
+            - n_submit (int): Number of times the 'chat-input' has been submitted.
+
+            Returns:
+            - str: An empty string to clear the chat input field, or dash.no_update if no action was performed.
+            """
             # If either button is clicked or Enter is pressed, clear the input
             if n_clicks or n_submit:
                 return ''
@@ -444,6 +506,17 @@ class DashCallbacks:
             [State('document-dropdown', 'options')]
         )
         def update_document_selection(select_all_clicks, clear_all_clicks, options):
+            """
+            Callback function to update the selection in the document dropdown based on button clicks.
+
+            Parameters:
+            - select_all_clicks (int): Number of times the 'select-all-documents' button has been clicked.
+            - clear_all_clicks (int): Number of times the 'clear-all-documents' button has been clicked.
+            - options (list): List of options available in the 'document-dropdown'.
+
+            Returns:
+            - list: Updated list of selected values for the 'document-dropdown', based on the button clicks.
+            """
             return self._update_selection(select_all_clicks, clear_all_clicks, options)
 
         @self.dash_app.callback(
@@ -453,6 +526,17 @@ class DashCallbacks:
             [State('user-dropdown', 'options')]
         )
         def update_user_selection(select_all_clicks, clear_all_clicks, options):
+            """
+            Callback function to update the selection in the user dropdown based on button clicks.
+
+            Parameters:
+            - select_all_clicks (int): Number of times the 'select-all-users' button has been clicked.
+            - clear_all_clicks (int): Number of times the 'clear-all-users' button has been clicked.
+            - options (list): List of options available in the 'user-dropdown'.
+
+            Returns:
+            - list: Updated list of selected values for the 'user-dropdown', based on the button clicks.
+            """
             return self._update_selection(select_all_clicks, clear_all_clicks, options)
 
         @self.dash_app.callback(
@@ -462,6 +546,17 @@ class DashCallbacks:
             [State('logs-dropdown', 'options')]
         )
         def update_logs_selection(select_all_clicks, clear_all_clicks, options):
+            """
+            Callback function to update the selection in the logs dropdown based on button clicks.
+
+            Parameters:
+            - select_all_clicks (int): Number of times the 'select-all-logs' button has been clicked.
+            - clear_all_clicks (int): Number of times the 'clear-all-logs' button has been clicked.
+            - options (list): List of options available in the 'logs-dropdown'.
+
+            Returns:
+            - list: Updated list of selected values for the 'logs-dropdown', based on the button clicks.
+            """
             return self._update_selection(select_all_clicks, clear_all_clicks, options)
 
         @self.dash_app.callback(
@@ -471,6 +566,17 @@ class DashCallbacks:
             [State('graphs-dropdown', 'options')]
         )
         def update_graphs_selection(select_all_clicks, clear_all_clicks, options):
+            """
+            Callback function to update the selection in the graphs dropdown based on button clicks.
+
+            Parameters:
+            - select_all_clicks (int): Number of times the 'select-all-graphs' button has been clicked.
+            - clear_all_clicks (int): Number of times the 'clear-all-graphs' button has been clicked.
+            - options (list): List of options available in the 'graphs-dropdown'.
+
+            Returns:
+            - list: Updated list of selected values for the 'graphs-dropdown', based on the button clicks.
+            """
             return self._update_selection(select_all_clicks, clear_all_clicks, options)
 
         # Callbacks for dynamic content
@@ -479,6 +585,15 @@ class DashCallbacks:
             [Input("url", "pathname")]
         )
         def display_page(pathname: str):
+            """
+            Callback function to update the page content based on the current URL pathname.
+
+            Parameters:
+            - pathname (str): The current URL pathname.
+
+            Returns:
+            - html.Div: The layout for the corresponding page based on the pathname.
+            """
             if pathname == "/graphs":
                 return self.page_layouts.graphs_layout()
             elif pathname == "/dashboard":
@@ -502,6 +617,16 @@ class DashCallbacks:
             State({'type': 'collapse', 'index': MATCH, 'category': MATCH}, 'is_open')
         )
         def toggle_collapsible_list(n_clicks, is_open):
+            """
+            Toggle the state of a collapsible list based on button clicks.
+
+            Parameters:
+            - n_clicks (int): Number of times the toggle button has been clicked.
+            - is_open (bool): Current state of the collapsible list (open or closed).
+
+            Returns:
+            - bool: New state of the collapsible list (open or closed).
+            """
             if n_clicks:
                 return not is_open
             return is_open
