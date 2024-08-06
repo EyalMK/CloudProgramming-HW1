@@ -89,9 +89,8 @@ class DashCallbacks:
             graph_type (str, optional): A string representing the type of graph to create. Defaults to ''.
             collapsible_list (bool, optional): Whether to include a collapsible list component. Defaults to False.
 
-        Returns:
-            Union[tuple, Any]: If `collapsible_list` is True, returns a tuple containing the graph component and the collapsible list component.
-                               Otherwise, returns only the graph component.
+        Returns: Union[tuple, Any]: If `collapsible_list` is True, returns a tuple containing the graph component and
+        the collapsible list component. Otherwise, returns only the graph component.
         """
         df = pd.DataFrame(data)
         filtered_df = setup_dataframe_callback(df, *setup_dataframe_args)
@@ -161,9 +160,8 @@ class DashCallbacks:
         Process and generate a unique JSON filename based on whether it is a default data source or an uploaded log.
         If the filename is for an uploaded log, ensure uniqueness by appending an index if needed.
 
-        Parameters:
-            filename (str): The original filename of the JSON file.
-            default_data_source (bool): A flag indicating if the file is the default data source. If True, returns 'default.json'.
+        Parameters: filename (str): The original filename of the JSON file. default_data_source (bool): A flag
+        indicating if the file is the default data source. If True, returns 'default.json'.
 
         Returns:
             str: The processed filename, either 'default.json' or a unique filename for uploaded logs.
@@ -258,7 +256,10 @@ class DashCallbacks:
             # And then update processed-df and pre-processed-df attributes in the graphs_layout
             if selected_log and self.df_handler.selected_log_name != selected_log:
                 is_default_source = selected_log.lower() == 'default log'
-                collection_name = DatabaseCollections.ONSHAPE_LOGS.value if is_default_source else DatabaseCollections.UPLOADED_LOGS.value
+                if is_default_source:
+                    collection_name = DatabaseCollections.ONSHAPE_LOGS.value
+                else:
+                    collection_name = DatabaseCollections.UPLOADED_LOGS.value
                 processed_filename = 'default.json' if is_default_source else selected_log
 
                 self.df_handler.handle_switch_log_source(collection_name, file_name=processed_filename)
@@ -346,7 +347,10 @@ class DashCallbacks:
                         decoded = base64.b64decode(content_string)
                         size_kb = len(decoded) / 1024  # size in KB
 
-                        collection_name = DatabaseCollections.ONSHAPE_LOGS.value if default_data_source else DatabaseCollections.UPLOADED_LOGS.value
+                        if default_data_source:
+                            collection_name = DatabaseCollections.ONSHAPE_LOGS.value
+                        else:
+                            collection_name = DatabaseCollections.UPLOADED_LOGS.value
 
                         self.db_handler.write_to_database(collection_name, self.page_layouts.uploaded_json)
                         processed_filename = self.process_json_filename(filename, default_data_source)
