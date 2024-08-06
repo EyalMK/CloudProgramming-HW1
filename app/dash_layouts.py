@@ -370,12 +370,36 @@ class DashPageLayouts:
         )
 
     def search_glossary_layout(self):
-        return self._create_layout("Search OnShape Glossary", [
-            self._create_card("Search", self.text_search_layout(), 10)
-        ])
+        """
+        Creates the layout for searching the OnShape Glossary.
+
+        This layout includes a card with a search interface for the OnShape glossary, allowing users to
+        enter search queries and view the results.
+
+        Returns:
+            html.Div: A Div containing the search card layout.
+        """
+        return self._create_layout(
+            "Search OnShape Glossary",
+            [
+                self._create_card("Search", self.text_search_layout(), 10)
+            ]
+        )
 
     @staticmethod
     def search_results_table_layout(data):
+        """
+        Creates a layout for displaying search results in a table.
+
+        This method returns a Div containing a Dash DataTable with columns for search terms and their occurrences.
+        The table is styled to have a light background and centered text.
+
+        Parameters:
+            data (list of dict): The data to be displayed in the table. Each dictionary represents a row.
+
+        Returns:
+            html.Div: A Div containing the styled DataTable.
+        """
         return html.Div(
             dash_table.DataTable(
                 columns=[
