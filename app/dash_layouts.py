@@ -5,9 +5,9 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+
 from dash import dcc, dash_table
 from dash import html
-
 from app.dash_callbacks import DashCallbacks
 from config.constants import PROJECT_NAME
 from dataframes.dataframe_handler import DataFrameHandler
@@ -79,7 +79,8 @@ class DashPageLayouts:
             ])
         ])
 
-    def create_dynamic_tabs(self, selected_graphs):
+    @staticmethod
+    def create_dynamic_tabs(selected_graphs):
         tabs = []
         if 'Project Time Distribution' in selected_graphs:
             tabs.append(dcc.Tab(label='Project Time Distribution', children=[
@@ -108,11 +109,14 @@ class DashPageLayouts:
         return tabs
 
     def landing_page_layout(self):
-        image_path = "/static/homepage_image.jpg"
         return self._create_layout("Welcome to the ShapeFlow Monitor Tool", [
             self._create_card("Overview",
                               html.P(
-                                  "The ShapeFlow Monitor Tool is your go-to solution for monitoring and analyzing the performance of your OnShape team. Designed with managers in mind, this application provides comprehensive insights into team activity, project progress, and collaboration efficiency by processing log files in JSON format from the OnShape platform."),
+                                  "The ShapeFlow Monitor Tool is your go-to solution for monitoring and analyzingthe "
+                                  "performance of your OnShape team. Designed with managers in mind, this application "
+                                  "provides comprehensive insights into team activity, project progress, "
+                                  "and collaboration efficiency by processing log files in JSON format from the "
+                                  "OnShape platform."),
                               12
                               ),
 
@@ -120,31 +124,38 @@ class DashPageLayouts:
                               html.Div([
                                   self._create_styled_list_item(
                                       "Upload Log Files:",
-                                      "Begin by navigating to the Setup section. Here, you can upload a new log file from your device and save it to the database.",
+                                      "Begin by navigating to the Setup section. Here, you can upload a new log file "
+                                      "from your device and save it to the database.",
                                       icon="fas fa-upload"),
                                   self._create_styled_list_item(
                                       "Select Default Log:",
-                                      "Mark An uploaded log to be used as the default for analysis, using the 'Default Data Source' checkbox.",
+                                      "Mark An uploaded log to be used as the default for analysis, using the "
+                                      "'Default Data Source' checkbox.",
                                       icon="fas fa-check"),
                                   self._create_styled_list_item(
                                       "Explore Visualizations:",
-                                      "Head over to the Graphs section to explore various analytical graphs that provide a deep dive into your team's performance and activities.",
+                                      "Head over to the Graphs section to explore various analytical graphs that "
+                                      "provide a deep dive into your team's performance and activities.",
                                       icon="fas fa-chart-bar"),
                                   self._create_styled_list_item(
                                       "Analyze Working Hours:",
-                                      "Visit the Working Hours section to review detailed analyses of your team's working hours, including patterns and productivity trends.",
+                                      "Visit the Working Hours section to review detailed analyses of your team's "
+                                      "working hours, including patterns and productivity trends.",
                                       icon="fas fa-clock"),
                                   self._create_styled_list_item(
                                       "Stay Informed with Alerts:",
-                                      "The Alerts section will keep you updated with important notifications derived from the log file, ensuring you never miss a critical insight.",
+                                      "The Alerts section will keep you updated with important notifications derived "
+                                      "from the log file, ensuring you never miss a critical insight.",
                                       icon="fas fa-bell"),
                                   self._create_styled_list_item(
                                       "Chatbot Assistance:",
-                                      "Use the Chatbot feature for instant assistance and answers to your questions about the tool and its functionalities.",
+                                      "Use the Chatbot feature for instant assistance and answers to your questions "
+                                      "about the tool and its functionalities.",
                                       icon="fas fa-comments"),
                                   self._create_styled_list_item(
                                       "Search Glossary:",
-                                      "Easily find and understand specific terms or features using the Search Glossary option.",
+                                      "Easily find and understand specific terms or features using the Search "
+                                      "Glossary option.",
                                       icon="fas fa-search"),
                               ], style={"list-style-type": "none", "padding": "0"}),
                               12
@@ -160,7 +171,8 @@ class DashPageLayouts:
                                                             id="acknowledge-all-button"), 12),
         ])
 
-    def _create_styled_list_item(self, header: str, text: str, icon: str = None) -> html.Div:
+    @staticmethod
+    def _create_styled_list_item(header: str, text: str, icon: str = None) -> html.Div:
         return html.Div(
             [
                 html.I(className=icon, style={"margin-right": "10px", "color": "#007bff"}) if icon else None,
@@ -171,7 +183,8 @@ class DashPageLayouts:
                    "box-shadow": "0 1px 2px rgba(0, 0, 0, 0.1)"}
         )
 
-    def text_search_layout(self):
+    @staticmethod
+    def text_search_layout():
         return html.Div(
             [
                 dbc.Row(
@@ -200,7 +213,8 @@ class DashPageLayouts:
             self._create_card("Search", self.text_search_layout(), 10)
         ])
 
-    def search_results_table_layout(self, data):
+    @staticmethod
+    def search_results_table_layout(data):
         return html.Div(
             dash_table.DataTable(
                 columns=[
@@ -238,7 +252,8 @@ class DashPageLayouts:
         ])
 
     def chatbot_layout(self):
-        initial_greeting = "**ShapeFlowBot:** Hello! I'm ShapeFlowBot! I can assist you with various questions regarding ShapeFlow Monitor. How can I help you today?"
+        initial_greeting = ("**ShapeFlowBot:** Hello! I'm ShapeFlowBot! I can assist you with various questions "
+                            "regarding ShapeFlow Monitor. How can I help you today?")
 
         return self._create_layout("Chatbot Assistant", [
             dbc.Row([
@@ -273,7 +288,8 @@ class DashPageLayouts:
             ])
         ])
 
-    def create_empty_graph(self):
+    @staticmethod
+    def create_empty_graph():
         return go.Figure()
 
     def create_project_time_distribution_graph(self, dataframe):
@@ -335,7 +351,8 @@ class DashPageLayouts:
         self.graph_processed_df = self.df_handler.process_graphs_layout_dataframe(dataframe=self.lightly_refined_df)
         return self.graph_processed_df
 
-    def create_header(self):
+    @staticmethod
+    def create_header():
         current_date = datetime.now().strftime('%d-%m-%Y')
         logo_path = "/static/SFM-logo.png"
         return dbc.Navbar(
@@ -381,7 +398,8 @@ class DashPageLayouts:
             ),
         ], width=2, className="bg-dark", style={"height": "100%", "overflow": "hidden"})
 
-    def create_footer(self):
+    @staticmethod
+    def create_footer():
         return dbc.Navbar(
             dbc.Container([
                 dbc.Row([
@@ -408,7 +426,8 @@ class DashPageLayouts:
             self.create_footer()
         ], style={"display": "flex", "flexDirection": "column", "height": "100vh"})
 
-    def _create_layout(self, title: str, children: list, style: dict = None) -> dbc.Container:
+    @staticmethod
+    def _create_layout(title: str, children: list, style: dict = None) -> dbc.Container:
         return dbc.Container([
             dbc.Row([
                 dbc.Col(
@@ -487,14 +506,16 @@ class DashPageLayouts:
         unread_alerts_count = self.df_handler.get_unread_alerts_count()
         return alerts_list, str(unread_alerts_count)
 
-    def _create_nav_link(self, icon_class: str, text: str, href: str, badge_text: str = "",
+    @staticmethod
+    def _create_nav_link(icon_class: str, text: str, href: str, badge_text: str = "",
                          badge_color: str = "", badge_id: str = "") -> dbc.NavLink:
         children = [html.I(className=icon_class), html.Span(text, className="ml-4")]
         if badge_text:
             children.append(dbc.Badge(badge_text, color=badge_color, className="ml-2", id=badge_id))
         return dbc.NavLink(children, href=href, active="exact", className="text-white gap-6")
 
-    def _validate_graph_data(self, df, *columns):
+    @staticmethod
+    def _validate_graph_data(df, *columns):
         # Ensure columns are provided and are not None
         if not columns or any(col is None for col in columns):
             # Return an empty DataFrame with the expected column names
@@ -674,6 +695,18 @@ class DashPageLayouts:
         return occurrences_melted
 
     def create_collapsible_list(self, actions, type=''):
+        """
+        Creates a list of collapsible cards based on the specified action type.
+
+        Depending on the action type, this method generates a list of `dbc.Card` components that display actions in a collapsible format.
+
+        Parameters:
+            actions (pd.DataFrame): The DataFrame containing action data. It should include columns relevant to the action type.
+            action_type (str): The type of actions to display. It can be either 'repeated_actions' or 'advanced_basic_actions'.
+
+        Returns:
+            List[dbc.Card]: A list of Dash Bootstrap Components cards, each containing a header and collapsible body.
+        """
         items = []
         if type == 'repeated_actions':
             for index, (action, group) in enumerate(actions.groupby('Action')):
@@ -737,7 +770,8 @@ class DashPageLayouts:
 
         return items
 
-    def _create_filter_row(self, dropdown_id, placeholder, options, select_all_id, clear_all_id,
+    @staticmethod
+    def _create_filter_row(dropdown_id, placeholder, options, select_all_id, clear_all_id,
                            default_value=None) -> dbc.Row:
         return dbc.Row([
             dbc.Col(
