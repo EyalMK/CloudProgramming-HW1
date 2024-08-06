@@ -67,8 +67,8 @@ class DashCallbacks:
             collapsible_list = self.page_layouts.create_collapsible_list(collapsible_df, type='advanced_basic_actions')
             check = self.page_layouts.create_advanced_basic_actions_graph(self.df_handler.setup_advanced_basic_actions_graph_dataframe(filtered_df))
             return check, collapsible_list
-        elif graph_type == 'Action Frequency by User':
-            return self.page_layouts.create_action_frequency_scatter_graph(self.df_handler.setup_action_frequency_scatter_graph_dataframe(filtered_df,start_time,end_time)), None
+        elif graph_type == 'Action Sequence by User':
+            return self.page_layouts.create_action_sequence_scatter_graph(self.df_handler.setup_action_sequence_scatter_graph_dataframe(filtered_df, start_time, end_time)), None
         elif graph_type == 'Work Patterns Over Time':
             return self.page_layouts.create_work_patterns_over_time_graph(self.df_handler.setup_work_patterns_over_time_graph_dataframe(filtered_df)), None
         elif graph_type == 'Repeated Actions By User':
@@ -279,16 +279,16 @@ class DashCallbacks:
             return alerts_list, unread_alerts_count
 
         @self.dash_app.callback(
-            Output('chat-history', 'value'),
+            Output('chat-history', 'children'),
             [Input('send-button', 'n_clicks'), Input('chat-input', 'n_submit')],  # Include n_submit
-            [State('chat-input', 'value'), State('chat-history', 'value')]
+            [State('chat-input', 'value'), State('chat-history', 'children')]
         )
         def update_chat(n_clicks, n_submit, user_input, chat_history):
             if (n_clicks is None and n_submit is None) or user_input is None or user_input.strip() == "":
                 return chat_history
 
             response = self.chat_bot.respond(user_input)
-            new_history = f"{chat_history}\n\nYou: {user_input}\n\nShapeFlowBot: {response}"
+            new_history = f"{chat_history}\n\n**You:** {user_input}\n\n**ShapeFlowBot:** {response}"
             return new_history
 
         @self.dash_app.callback(

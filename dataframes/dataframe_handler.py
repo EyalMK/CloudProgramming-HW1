@@ -1,5 +1,6 @@
 # DataFrames Handler
 import os
+from datetime import timedelta, datetime
 import pandas as pd
 
 from datetime import datetime
@@ -18,6 +19,7 @@ class DataFrameHandler:
     Attributes:
         db_handler (DatabaseHandler): An instance for interacting with the database.
         utils (Utilities): An instance providing utility functions such as logging.
+        raw_df (pd.DataFrame): The raw data frame from the logs.
         loaded_df (pd.DataFrame): The processed data frame.
         max_date (datetime): The maximum date for filtering data.
         min_date (datetime): The minimum date for filtering data.
@@ -287,9 +289,9 @@ class DataFrameHandler:
         return dataframe.groupby(['User', 'Action Type']).size().reset_index(name='Action Count')
 
     @staticmethod
-    def setup_action_frequency_scatter_graph_dataframe(dataframe, start_date, end_date):
+    def setup_action_sequence_scatter_graph_dataframe(dataframe, start_date, end_date):
         """
-        Set up the data frame for the action frequency scatter graph by filtering
+        Set up the data frame for the action sequence scatter graph by filtering
         based on the provided date range.
 
         Parameters:
@@ -408,8 +410,7 @@ class DataFrameHandler:
             data_key = next(iter(data))  # First key
         self.loaded_df = pd.DataFrame(data[data_key]['data'])
 
-    @staticmethod
-    def _convert_time_column(dataframe):
+    def _convert_time_column(self, dataframe):
         """
         Ensure the 'Time' column in the provided DataFrame is properly parsed to datetime.
 

@@ -58,7 +58,7 @@ class Utilities:
     @staticmethod
     def get_supported_graphs():
         return [
-            {'label': 'Action Frequency by User', 'value': 'Action Frequency by User'},
+            {'label': 'Action Sequence by User', 'value': 'Action Sequence by User'},
             {'label': 'Work Patterns Over Time', 'value': 'Work Patterns Over Time'},
             {'label': 'Project Time Distribution', 'value': 'Project Time Distribution'},
             {'label': 'Repeated Actions By User', 'value': 'Repeated Actions By User'},

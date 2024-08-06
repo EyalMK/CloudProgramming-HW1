@@ -76,6 +76,6 @@ class App:
             raise
 
     def run(self):
-        debug = os.environ["RUNTIME_ENVIRONMENT"] in [RuntimeEnvironments.DEV.value, RuntimeEnvironments.TEST.value]
+        debug_mode = os.environ["RUNTIME_ENVIRONMENT"] in [RuntimeEnvironments.DEV.value, RuntimeEnvironments.TEST.value]
         self.utils.logger.info(f"=============== {PROJECT_NAME} is Running ===============")
-        self.dash_app.run_server(debug=debug, use_reloader=False, port=PORT, dev_tools_props_check=False)
+        self.dash_app.run_server(debug=debug_mode, use_reloader=debug_mode, port=PORT, dev_tools_props_check=False)

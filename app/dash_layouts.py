@@ -65,8 +65,17 @@ class DashPageLayouts:
             dcc.Store(id='processed-df', data=self.graph_processed_df.to_dict()),
             dcc.Store(id='pre-processed-df', data=self.lightly_refined_df.to_dict()),
             dcc.Store(id='show-graphs', data=False),
-            html.Div(id='graphs-tabs-container', style={'display': 'none'}, children=[
-                dcc.Tabs(id='dynamic-tabs')
+            html.Div([
+                dcc.Loading(
+                    id='loading',
+                    type='circle',
+                    style={'marginTop': '50px'},
+                    children=[
+                        html.Div(id='graphs-tabs-container', style={'display': 'none'}, children=[
+                            dcc.Tabs(id='dynamic-tabs')
+                        ])
+                    ]
+                )
             ])
         ])
 
@@ -82,9 +91,9 @@ class DashPageLayouts:
                 html.H2('Advanced & Basic Actions'),
                 html.Div(id={'type': 'collapse-div', 'index': 'advanced-basic-actions'})
             ]))
-        if 'Action Frequency by User' in selected_graphs:
-            tabs.append(dcc.Tab(label='Action Frequency by User', children=[
-                dcc.Graph(id={'type': 'graph', 'index': 'action-frequency-scatter-graph'})
+        if 'Action Sequence by User' in selected_graphs:
+            tabs.append(dcc.Tab(label='Action Sequence by User', children=[
+                dcc.Graph(id={'type': 'graph', 'index': 'action-sequence-scatter-graph'})
             ]))
         if 'Work Patterns Over Time' in selected_graphs:
             tabs.append(dcc.Tab(label='Work Patterns Over Time', children=[
@@ -229,27 +238,36 @@ class DashPageLayouts:
         ])
 
     def chatbot_layout(self):
-        initial_greeting = "\nShapeFlowBot: Hello! I'm ShapeFlowBot! I can assist you with various questions regarding ShapeFlow Monitor. How can I help you today?"
+        initial_greeting = "**ShapeFlowBot:** Hello! I'm ShapeFlowBot! I can assist you with various questions regarding ShapeFlow Monitor. How can I help you today?"
 
         return self._create_layout("Chatbot Assistant", [
             dbc.Row([
                 dbc.Col(
-                    html.Div([
-                        html.H5("Chat with ShapeFlowBot", className="card-title mb-5"),
-                        dcc.Textarea(
-                            id='chat-history',
-                            value=initial_greeting,
-                            readOnly=True,
-                            style={'width': '100%', 'height': '65vh'}
-                        ),
-                        dbc.Input(
-                            id='chat-input',
-                            placeholder='Type a message...',
-                            type='text',
-                            n_submit=0
-                        ),
-                        dbc.Button('Send', id='send-button', color='primary', className='mt-2'),
-                    ]),
+                    dbc.Card(
+                        dbc.CardBody([
+                            html.H5("Chat with ShapeFlowBot", className="card-title mb-4"),
+                            dcc.Markdown(
+                                id='chat-history',
+                                children=initial_greeting,
+                                style={'width': '100%', 'height': '50vh', 'backgroundColor': '#f8f9fa',
+                                       'border': '1px solid #ced4da', 'borderRadius': '5px', 'padding': '10px',
+                                       'overflowY': 'auto'}
+                            ),
+                            html.Div([
+                                dbc.Input(
+                                    id='chat-input',
+                                    placeholder='Type a message...',
+                                    type='text',
+                                    n_submit=0,
+                                    style={'width': '85%', 'display': 'inline-block', 'marginRight': '10px'}
+                                ),
+                                dbc.Button('Send', id='send-button', color='primary',
+                                           style={'width': '10%', 'display': 'inline-block'})
+                            ], className='mt-3'),
+                        ]),
+                        className='mb-4',
+                        style={'border': '1px solid #ced4da', 'borderRadius': '10px'}
+                    ),
                     width=12
                 ),
             ])
@@ -294,12 +312,12 @@ class DashPageLayouts:
                                                       'Action Type': 'Action Type'},
                                               orientation='h')
 
-    def create_action_frequency_scatter_graph(self, dataframe):
+    def create_action_sequence_scatter_graph(self, dataframe):
         return self._create_scatter_chart(df=dataframe,
                                           x='Time',
-                                          y='User',
-                                          color='Action',
-                                          title='Action Frequency by User',
+                                          y='Action',
+                                          color='User',
+                                          title='Action Sequence by User',
                                           labels={'Time': 'Time', 'User': 'User', 'Action': 'Action'})
 
     def create_work_patterns_over_time_graph(self, dataframe):
@@ -572,7 +590,8 @@ class DashPageLayouts:
 
         return px.scatter(**scatter_chart_params)
 
-    def _create_pie_chart(self, df: pd.DataFrame, names: str, values: str, title: str, labels=None, threshold_percentage=0.0) -> px.pie:
+    def _create_pie_chart(self, df: pd.DataFrame, names: str, values: str, title: str, labels=None,
+                          threshold_percentage=0.0) -> px.pie:
         # Validate the graph data by passing df and the columns to _validate_graph_data
         df, validated_columns = self._validate_graph_data(df, names, values)
         names, values = validated_columns  # Unpack the validated columns
@@ -761,8 +780,9 @@ class DashPageLayouts:
                         label="Default data source"
                     ),
                     html.Div(
-                        "Default data source will be used when you start the program.",
-                        style={'margin': '0', 'padding': '0', 'fontSize': 'small', 'lineHeight': '1', 'marginLeft': '25px'}
+                        "* Default data source logs are loaded automatically. Beware: Uploading a new default log will overwrite the existing one.",
+                        style={'margin': '0', 'padding': '0', 'fontSize': 'small', 'lineHeight': '1',
+                               'marginLeft': '25px'}
                     ),
                     dbc.Button(
                         "Submit",
@@ -770,7 +790,7 @@ class DashPageLayouts:
                         color="primary",
                         className="w-100",
                         disabled=True,
-                        style={'marginTop': '30px'}
+                        style={'margin-top': '30px'}
                     ),
                     html.Div(
                         id='submit-status',
