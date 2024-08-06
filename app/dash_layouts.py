@@ -1143,7 +1143,7 @@ class DashPageLayouts:
         Creates a bar chart visualizing the distribution of working hours by user.
 
         Returns:
-            px.bar: A Plotly Express bar chart showing working hours distribution.
+            px.bar: A Plotly Express bar chart showing working hours' distribution.
         """
         working_hours = self.df_handler.extract_working_hours_data()
 
@@ -1297,7 +1297,7 @@ class DashPageLayouts:
         """
         return dbc.Row([
             dbc.Col(
-                dcc.Dropdown(id=dropdown_id, options=options, placeholder=placeholder, value=default_value, multi=True),
+                dcc.Dropdown(id=dropdown_id, options=options, placeholder=placeholder, value=default_value, multi=True, disabled=False),
                 width=7),
             dbc.Col(dbc.Button([html.I(className="fas fa-check-double", style={"margin-right": "5px"}), "Select All"],
                                id=select_all_id, color="secondary",

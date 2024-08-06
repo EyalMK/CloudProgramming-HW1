@@ -11,6 +11,7 @@ ShapeFlow Monitor is a cloud-based web application designed for analyzing and vi
 - [Project Structure](#project-structure)
 - [Key Classes](#key-classes)
 - [Key Functions](#key-functions)
+- [Design Patterns](#design-patterns)
 - [Scripts](#scripts)
 - [Dependencies](#dependencies)
 - [Development Tools](#development-tools)
@@ -236,6 +237,11 @@ ShapeFlow Monitor/
 **utils/utilities.py**:
 * setup_logger(self): Sets up logging to console and database.
 * get_supported_graphs(self): Returns a list of the supported graphs.
+
+## Design Patterns
+* **Singleton**: The application uses the Singleton design pattern to ensure that only one instance of the database handler, database logger, dataframe handler and app is created.
+* **Adapter**: The application uses the Adapter design pattern to adapt the database logger to the logging module.
+* **MVC**: The application follows the Model-View-Controller design pattern. The Model is represented by the dataframes module, the View is represented by the app module, and the Controller is represented by the dash_callbacks module.
 
 ## Scripts
 

@@ -1,6 +1,4 @@
-# Database Handler
 import logging
-
 from typing import Any
 from firebase import firebase
 from config.constants import DatabaseCollections
@@ -14,10 +12,19 @@ class DatabaseHandler:
         db (firebase.FirebaseApplication): The Firebase application instance.
         logger (logging.Logger): Logger instance for logging information and errors.
     """
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(DatabaseHandler, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self):
         """Initialize the DatabaseHandler with no database connection and logger."""
-        self.db = None
-        self.logger = None
+        if not hasattr(self, 'initialized'):
+            self.db = None
+            self.logger = None
+            self.initialized = True
 
     def connect_to_firebase(self, db_url: str):
         """

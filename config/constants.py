@@ -13,7 +13,7 @@ FONT_AWESOME_CDN = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/cs
 DB_CONN_URL = "https://shapeflow-monitor-final-default-rtdb.europe-west1.firebasedatabase.app/"
 
 ONSHAPE_GLOSSARY_URL = "https://cad.onshape.com/help/Content/Glossary/glossary.htm?tocpath=_____19"
-DEFAULT_MIN_DATE = date(2022, 4, 21).strftime('%d-%m-%Y')
+DEFAULT_MIN_DATE = date(2021, 4, 21).strftime('%d-%m-%Y')
 DEFAULT_MAX_DATE = datetime.now().strftime('%d-%m-%Y')
 
 

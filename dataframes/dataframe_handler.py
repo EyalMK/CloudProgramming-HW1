@@ -30,6 +30,12 @@ class DataFrameHandler:
         selected_log_name (str): The path to the selected log data in the database.
         alerts_df (pd.DataFrame): A data frame holding alerts data.
     """
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(DataFrameHandler, cls).__new__(cls)
+        return cls._instance
 
     def __init__(self, db_handler, utils):
         """
@@ -39,26 +45,28 @@ class DataFrameHandler:
             db_handler (DatabaseHandler): An instance of DatabaseHandler for database operations.
             utils (Utilities): An instance of Utilities for various utility functions.
         """
-        self.loaded_df = None
-        self.missing_default_log = False
-        self.max_date = datetime.strptime(DEFAULT_MAX_DATE, '%d-%m-%Y')
-        self.min_date = datetime.strptime(DEFAULT_MIN_DATE, '%d-%m-%Y')
-        self.utils = utils
-        self.filters_data = {
-            'documents': [],
-            'users': [],
-            'descriptions': [],
-            'uploaded-logs': [],
-            'graphs': []
-        }
-        self.activity_over_time = []
-        self.document_usage = []
-        self.user_activity = []
-        self.log_cache = {}
-        self.selected_log_name = "None"
-        self.alerts_df = pd.DataFrame()
-        self.db_handler = db_handler
-        self.initialize_df()
+        if not hasattr(self, 'initialized'):
+            self.loaded_df = None
+            self.missing_default_log = False
+            self.max_date = datetime.strptime(DEFAULT_MAX_DATE, '%d-%m-%Y')
+            self.min_date = datetime.strptime(DEFAULT_MIN_DATE, '%d-%m-%Y')
+            self.utils = utils
+            self.filters_data = {
+                'documents': [],
+                'users': [],
+                'descriptions': [],
+                'uploaded-logs': [],
+                'graphs': []
+            }
+            self.activity_over_time = []
+            self.document_usage = []
+            self.user_activity = []
+            self.log_cache = {}
+            self.selected_log_name = "None"
+            self.alerts_df = pd.DataFrame()
+            self.db_handler = db_handler
+            self.initialize_df()
+            self.initialized = True
 
     def initialize_df(self):
         """

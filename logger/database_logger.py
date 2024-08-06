@@ -1,5 +1,4 @@
 import logging
-
 from datetime import datetime
 from database.db_handler import DatabaseHandler
 
@@ -16,6 +15,12 @@ class DatabaseLogger(logging.Handler):
         db_handler (DatabaseHandler): An instance of the DatabaseHandler used to
             interact with the database.
     """
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(DatabaseLogger, cls).__new__(cls)
+        return cls._instance
 
     def __init__(self, db_handler: 'DatabaseHandler'):
         """
@@ -25,8 +30,10 @@ class DatabaseLogger(logging.Handler):
             db_handler (DatabaseHandler): An instance of the DatabaseHandler to
                 be used for posting log entries.
         """
-        super().__init__()
-        self.db_handler = db_handler
+        if not hasattr(self, 'initialized'):
+            super().__init__()
+            self.db_handler = db_handler
+            self.initialized = True
 
     def emit(self, record: logging.LogRecord):
         """

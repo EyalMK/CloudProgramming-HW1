@@ -30,6 +30,13 @@ class App:
         _get_ngrok_tunnel(): Retrieves or establishes a ngrok tunnel for public URL access.
         run(): Starts the Dash application server.
     """
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:
+            cls._instance = super(App, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self, db_conn_url):
         """
         Initializes the App with the provided database connection URL.
@@ -37,7 +44,7 @@ class App:
         Parameters:
             db_conn_url (str): The URL for connecting to the Firebase database.
         """
-        try:
+        if not hasattr(self, 'initialized'):
             self.db_uri = db_conn_url
             self.db_handler = DatabaseHandler()
             self.utils = Utilities(self.db_handler)
@@ -47,11 +54,9 @@ class App:
                                       external_stylesheets=[dbc.themes.BOOTSTRAP, FONT_AWESOME_CDN])
             self.dash_app.config.suppress_callback_exceptions = True
             self.dash_page_layouts = DashPageLayouts(self.dash_app, self.db_handler, self.utils)
-            # NGROK tunnel outsourcing from Colab.
             self._initialize_server()
             self._setup_routes()
-        except Exception as e:
-            self.utils.logger.error(f"Error initializing the app: {str(e)}")
+            self.initialized = True
 
     def _initialize_database(self):
         """

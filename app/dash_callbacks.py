@@ -190,6 +190,7 @@ class DashCallbacks:
             - 'alerts-count-badge' (count of unread alerts)
             - 'start-time' and 'end-time' values and their min/max values
             - 'processed-df' and 'pre-processed-df' data
+            - 'user-dropdown' and 'document-dropdown' options post filtering
 
         Inputs:
             - 'apply-filters' button click
@@ -209,7 +210,9 @@ class DashCallbacks:
              Output('end-time', 'min'),
              Output('end-time', 'max'),
              Output('processed-df', 'data'),
-             Output('pre-processed-df', 'data')],
+             Output('pre-processed-df', 'data'),
+             Output('user-dropdown', 'options'),
+             Output('document-dropdown', 'options')],
             [Input('apply-filters', 'n_clicks')],
             [State('processed-df', 'data'),
              State('document-dropdown', 'value'),
@@ -269,6 +272,9 @@ class DashCallbacks:
                 self.df_handler.handle_switch_log_source(collection_name, file_name=processed_filename)
                 dataframe = self.page_layouts.handle_initial_graph_dataframes()
 
+                # Reset selected options that are no longer relevant after switching logs
+                selected_document = selected_user = None
+
                 full_range_start_time = value_start_time = self.df_handler.min_date  # Get new dates
                 full_range_end_time = value_end_time = self.df_handler.max_date
 
@@ -279,7 +285,7 @@ class DashCallbacks:
                 return [tabs_style, [], dash.no_update, dash.no_update,
                         value_start_time, full_range_start_time, full_range_end_time,
                         value_end_time, full_range_start_time, full_range_end_time,
-                        self.page_layouts.graph_processed_df.to_dict(), self.page_layouts.lightly_refined_df.to_dict()]
+                        self.page_layouts.graph_processed_df.to_dict(), self.page_layouts.lightly_refined_df.to_dict(), self.df_handler.filters_data['users'], self.df_handler.filters_data['documents']]
 
             updated_tabs = []
             for graph_type in selected_graphs:
@@ -301,7 +307,7 @@ class DashCallbacks:
             return [tabs_style, updated_tabs, data_source_title, str(self.df_handler.get_unread_alerts_count()),
                     value_start_time, full_range_start_time, full_range_end_time,
                     value_end_time, full_range_start_time, full_range_end_time,
-                    self.page_layouts.graph_processed_df.to_dict(), self.page_layouts.lightly_refined_df.to_dict()]
+                    self.page_layouts.graph_processed_df.to_dict(), self.page_layouts.lightly_refined_df.to_dict(), self.df_handler.filters_data['users'], self.df_handler.filters_data['documents']]
 
         # Combined callback to handle file upload and submit
         @self.dash_app.callback(
@@ -540,7 +546,7 @@ class DashCallbacks:
             return self._update_selection(select_all_clicks, clear_all_clicks, options)
 
         @self.dash_app.callback(
-            Output('logs-dropdown', 'value'),
+            [Output('logs-dropdown', 'value')],
             [Input('select-all-logs', 'n_clicks'),
              Input('clear-all-logs', 'n_clicks')],
             [State('logs-dropdown', 'options')]
@@ -579,6 +585,26 @@ class DashCallbacks:
             """
             return self._update_selection(select_all_clicks, clear_all_clicks, options)
 
+        @self.dash_app.callback(
+            Output({'type': 'collapse', 'index': MATCH, 'category': MATCH}, 'is_open'),
+            Input({'type': 'toggle', 'index': MATCH, 'category': MATCH}, 'n_clicks'),
+            State({'type': 'collapse', 'index': MATCH, 'category': MATCH}, 'is_open')
+        )
+        def toggle_collapsible_list(n_clicks, is_open):
+            """
+            Toggle the state of a collapsible list based on button clicks.
+
+            Parameters:
+            - n_clicks (int): Number of times the toggle button has been clicked.
+            - is_open (bool): Current state of the collapsible list (open or closed).
+
+            Returns:
+            - bool: New state of the collapsible list (open or closed).
+            """
+            if n_clicks:
+                return not is_open
+            return is_open
+
         # Callbacks for dynamic content
         @self.dash_app.callback(
             Output("page-content", "children"),
@@ -610,23 +636,3 @@ class DashCallbacks:
                 return self.page_layouts.chatbot_layout()
             else:
                 return self.page_layouts.landing_page_layout()
-
-        @self.dash_app.callback(
-            Output({'type': 'collapse', 'index': MATCH, 'category': MATCH}, 'is_open'),
-            Input({'type': 'toggle', 'index': MATCH, 'category': MATCH}, 'n_clicks'),
-            State({'type': 'collapse', 'index': MATCH, 'category': MATCH}, 'is_open')
-        )
-        def toggle_collapsible_list(n_clicks, is_open):
-            """
-            Toggle the state of a collapsible list based on button clicks.
-
-            Parameters:
-            - n_clicks (int): Number of times the toggle button has been clicked.
-            - is_open (bool): Current state of the collapsible list (open or closed).
-
-            Returns:
-            - bool: New state of the collapsible list (open or closed).
-            """
-            if n_clicks:
-                return not is_open
-            return is_open
