@@ -10,6 +10,7 @@ from dash import dcc, dash_table
 from dash import html
 from app.dash_callbacks import DashCallbacks
 from config.constants import PROJECT_NAME
+from database.db_handler import DatabaseHandler
 from dataframes.dataframe_handler import DataFrameHandler
 
 
