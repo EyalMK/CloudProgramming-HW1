@@ -794,6 +794,12 @@ class DashPageLayouts:
         ]), width=width, className="mb-3 mt-3")
 
     def _create_filters(self) -> html.Div:
+        """
+        Creates a filter panel for selecting documents, users, graphs, and logs, as well as specifying time ranges.
+
+        Returns:
+            html.Div: A container with filter controls for documents, users, graphs, logs, and time range.
+        """
         # If the selected log path is not uploaded logs, then the default value for the logs dropdown should be empty
         # Otherwise, it should be the first uploaded log
         selected_log_name = self.df_handler.selected_log_name
@@ -844,6 +850,14 @@ class DashPageLayouts:
         ], style={"padding": "10px", "maxWidth": "1200px", "margin": "auto"})
 
     def create_alerts_list(self) -> tuple:
+        """
+        Creates a list of alerts for display and counts the number of unread alerts.
+
+        Returns:
+            tuple: A tuple containing:
+                - html.Ul: An unordered list of alerts formatted for display.
+                - str: The count of unread alerts.
+        """
         if self.df_handler.alerts_df.shape[0] == 0:
             alerts_list = html.P("No alerts to display", style={"color": "grey"})
         else:
@@ -861,6 +875,20 @@ class DashPageLayouts:
     @staticmethod
     def _create_nav_link(icon_class: str, text: str, href: str, badge_text: str = "",
                          badge_color: str = "", badge_id: str = "") -> dbc.NavLink:
+        """
+        Creates a navigation link with optional badge.
+
+        Args:
+            icon_class (str): The class name for the icon.
+            text (str): The text to display in the link.
+            href (str): The URL to link to.
+            badge_text (str, optional): The text for the badge. Defaults to "".
+            badge_color (str, optional): The color of the badge. Defaults to "".
+            badge_id (str, optional): The ID for the badge. Defaults to "".
+
+        Returns:
+            dbc.NavLink: A Dash Bootstrap Components navigation link with optional badge.
+        """
         children = [html.I(className=icon_class), html.Span(text, className="ml-4")]
         if badge_text:
             children.append(dbc.Badge(badge_text, color=badge_color, className="ml-2", id=badge_id))
@@ -868,6 +896,17 @@ class DashPageLayouts:
 
     @staticmethod
     def _validate_graph_data(df, *columns):
+        """
+        Validates and ensures that a DataFrame contains the specified columns.
+
+        Args:
+            df (pd.DataFrame): The DataFrame to validate.
+            *columns (str): The columns that should be present in the DataFrame.
+
+        Returns:
+            tuple: A tuple containing the validated DataFrame and the list of columns.
+                   The DataFrame will have all specified columns, which will be empty if they were missing.
+        """
         # Ensure columns are provided and are not None
         if not columns or any(col is None for col in columns):
             # Return an empty DataFrame with the expected column names
@@ -886,6 +925,18 @@ class DashPageLayouts:
         return df, columns
 
     def _create_line_chart(self, df: pd.DataFrame, x: str, y: str, title: str) -> px.line:
+        """
+        Creates a line chart using Plotly Express.
+
+        Args:
+            df (pd.DataFrame): The DataFrame containing the data for the chart.
+            x (str): The column name for the x-axis.
+            y (str): The column name for the y-axis.
+            title (str): The title of the chart.
+
+        Returns:
+            px.line: A Plotly Express line chart.
+        """
         # Validate the graph data by passing df and the columns to _validate_graph_data
         df, validated_columns = self._validate_graph_data(df, x, y)
         x, y = validated_columns  # Unpack the validated columns
@@ -899,6 +950,23 @@ class DashPageLayouts:
 
     def _create_stacked_bar_chart(self, df, x, y, title, color, labels=None, barmode='group', orientation='h',
                                   grid=True):
+        """
+        Creates a stacked bar chart using Plotly Express.
+
+        Args:
+            df (pd.DataFrame): The DataFrame containing the data for the chart.
+            x (str): The column name for the x-axis.
+            y (str): The column name for the y-axis.
+            title (str): The title of the chart.
+            color (str): The column name for the color grouping.
+            labels (dict, optional): A dictionary to rename axis labels.
+            barmode (str, optional): The barmode for the chart (e.g., 'group', 'stack').
+            orientation (str, optional): The orientation of the bars ('h' for horizontal, 'v' for vertical).
+            grid (bool, optional): Whether to display grid lines on the chart.
+
+        Returns:
+            px.bar: A Plotly Express stacked bar chart.
+        """
         # Validate the graph data by passing df and the columns to _validate_graph_data
         df, validated_columns = self._validate_graph_data(df, x, y, color)
         x, y, color = validated_columns  # Unpack the validated columns
@@ -934,6 +1002,18 @@ class DashPageLayouts:
         return fig
 
     def _create_bar_chart(self, df: pd.DataFrame, x: str, y: str, title: str) -> px.bar:
+        """
+        Creates a bar chart using Plotly Express.
+
+        Args:
+            df (pd.DataFrame): The DataFrame containing the data for the chart.
+            x (str): The column name for the x-axis.
+            y (str): The column name for the y-axis.
+            title (str): The title of the chart.
+
+        Returns:
+            px.bar: A Plotly Express bar chart.
+        """
         df, validated_columns = self._validate_graph_data(df, x, y)
         x, y = validated_columns  # Unpack the validated columns
 
@@ -944,6 +1024,20 @@ class DashPageLayouts:
 
     def _create_scatter_chart(self, df: pd.DataFrame, x: str, y: str, color: str, title: str,
                               labels=None) -> px.scatter:
+        """
+        Creates a scatter chart using Plotly Express.
+
+        Args:
+            df (pd.DataFrame): The DataFrame containing the data for the chart.
+            x (str): The column name for the x-axis.
+            y (str): The column name for the y-axis.
+            color (str): The column name for the color encoding.
+            title (str): The title of the chart.
+            labels (dict, optional): A dictionary mapping column names to display labels.
+
+        Returns:
+            px.scatter: A Plotly Express scatter chart.
+        """
         # Validate the graph data by passing df and the columns to _validate_graph_data
         df, validated_columns = self._validate_graph_data(df, x, y, color)
         x, y, color = validated_columns  # Unpack the validated columns
@@ -968,6 +1062,20 @@ class DashPageLayouts:
 
     def _create_pie_chart(self, df: pd.DataFrame, names: str, values: str, title: str, labels=None,
                           threshold_percentage=0.0) -> px.pie:
+        """
+        Creates a pie chart using Plotly Express.
+
+        Args:
+            df (pd.DataFrame): The DataFrame containing the data for the chart.
+            names (str): The column name for the slice names.
+            values (str): The column name for the slice values.
+            title (str): The title of the chart.
+            labels (dict, optional): A dictionary mapping column names to display labels.
+            threshold_percentage (float, optional): Minimum percentage of the total for slices to be included.
+
+        Returns:
+            px.pie: A Plotly Express pie chart.
+        """
         # Validate the graph data by passing df and the columns to _validate_graph_data
         df, validated_columns = self._validate_graph_data(df, names, values)
         names, values = validated_columns  # Unpack the validated columns
@@ -1001,6 +1109,12 @@ class DashPageLayouts:
         return px.pie(**pie_chart_params)
 
     def _create_working_hours_chart(self):
+        """
+        Creates a bar chart visualizing the distribution of working hours by user.
+
+        Returns:
+            px.bar: A Plotly Express bar chart showing working hours distribution.
+        """
         working_hours = self.df_handler.extract_working_hours_data()
 
         # Ensure 'Time' column is correctly parsed and drop rows with NaT values
@@ -1027,6 +1141,13 @@ class DashPageLayouts:
                                           title="Working Hours Overview")
 
     def _create_occurrences_chart(self):
+        """
+        Creates a DataFrame showing the occurrences of work during night, weekend, and holiday periods
+        for each user.
+
+        Returns:
+            pd.DataFrame: A DataFrame with counts of occurrences categorized by night, weekend, and holiday.
+        """
         df = self.df_handler.loaded_df  # Access the preprocessed DataFrame directly
         if df is None:
             df = pd.DataFrame(columns=['Time', 'User'])
@@ -1130,6 +1251,20 @@ class DashPageLayouts:
     @staticmethod
     def _create_filter_row(dropdown_id, placeholder, options, select_all_id, clear_all_id,
                            default_value=None) -> dbc.Row:
+        """
+        Creates a filter row consisting of a dropdown and buttons for selecting and clearing all options.
+
+        Args:
+            dropdown_id (str): The ID for the dropdown component.
+            placeholder (str): The placeholder text for the dropdown.
+            options (list): List of options for the dropdown.
+            select_all_id (str): The ID for the 'Select All' button.
+            clear_all_id (str): The ID for the 'Clear All' button.
+            default_value (list, optional): The default selected values for the dropdown.
+
+        Returns:
+            dbc.Row: A row containing the dropdown and action buttons.
+        """
         return dbc.Row([
             dbc.Col(
                 dcc.Dropdown(id=dropdown_id, options=options, placeholder=placeholder, value=default_value, multi=True),
@@ -1144,6 +1279,13 @@ class DashPageLayouts:
 
     @staticmethod
     def _create_upload_component() -> html.Div:
+        """
+        Creates an upload component for JSON files with a loading spinner, a file upload area,
+        a default data source checkbox, a submit button, and a status display.
+
+        Returns:
+            html.Div: A div containing the upload component and its associated elements.
+        """
         return html.Div([
             dcc.Loading(
                 id='loading',
