@@ -1,6 +1,5 @@
 # DataFrames Handler
 import os
-from datetime import timedelta, datetime
 import pandas as pd
 
 from datetime import datetime
@@ -362,8 +361,8 @@ class DataFrameHandler:
         return df.groupby(['Action', 'User', 'Description']).size().reset_index(name='Count')
 
     @staticmethod
-    def prepare_data_for_collapsible_list(dataframe, type=''):
-        if type == 'repeated_actions':
+    def prepare_data_for_collapsible_list(dataframe, list_type=''):
+        if list_type == 'repeated_actions':
             df = dataframe.sort_values(by=['User', 'Time'])
             return df.groupby(['Action', 'User', 'Description']).size().reset_index(name='Count')
 
