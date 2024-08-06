@@ -814,36 +814,69 @@ class DashPageLayouts:
 
         return html.Div([
             html.Div(id='log-switch-trigger', style={'display': 'none'}),
-            self._create_filter_row('document-dropdown', 'Select Document', self.df_handler.filters_data['documents'],
-                                    'select-all-documents', 'clear-all-documents'),
-            self._create_filter_row('user-dropdown', 'Select User', self.df_handler.filters_data['users'],
-                                    'select-all-users', 'clear-all-users'),
-            self._create_filter_row('graphs-dropdown', 'Select Graphs', self.df_handler.filters_data['graphs'],
-                                    'select-all-graphs', 'clear-all-graphs', default_value=self.df_handler.filters_data['graphs']),
+            self._create_filter_row(
+                'document-dropdown',
+                'Select Document',
+                self.df_handler.filters_data['documents'],
+                'select-all-documents',
+                'clear-all-documents'
+            ),
+            self._create_filter_row(
+                'user-dropdown',
+                'Select User',
+                self.df_handler.filters_data['users'],
+                'select-all-users',
+                'clear-all-users'
+            ),
+            self._create_filter_row(
+                'graphs-dropdown',
+                'Select Graphs',
+                self.df_handler.filters_data['graphs'],
+                'select-all-graphs',
+                'clear-all-graphs',
+                default_value=self.df_handler.filters_data['graphs']
+            ),
             dbc.Row([
                 dbc.Col(
-                    dcc.Dropdown(id='logs-dropdown',
-                                 options=uploaded_logs_options,
-                                 placeholder='Select Log',
-                                 value=default_log_option),
-                    width=7)
+                    dcc.Dropdown(
+                        id='logs-dropdown',
+                        options=uploaded_logs_options,
+                        placeholder='Select Log',
+                        value=default_log_option
+                    ),
+                    width=7
+                )
             ], className="mb-3"),
             dbc.Row([
                 dbc.Col(html.Div([
                     html.Label("Start Time"),
-                    dcc.Input(id='start-time', type='datetime-local',
-                              min=min_date, max=max_date,
-                              value=min_date,
-                              className='form-control')
+                    dcc.Input(
+                        id='start-time',
+                        type='datetime-local',
+                        min=min_date,
+                        max=max_date,
+                        value=min_date,
+                        className='form-control'
+                    )
                 ]), width=6),
                 dbc.Col(html.Div([
                     html.Label("End Time"),
-                    dcc.Input(id='end-time', type='datetime-local',
-                              min=min_date, max=max_date,
-                              value=max_date, className='form-control')
+                    dcc.Input(
+                        id='end-time',
+                        type='datetime-local',
+                        min=min_date,
+                        max=max_date,
+                        value=max_date,
+                        className='form-control'
+                    )
                 ]), width=6)
             ], className="mb-3"),
-            dbc.Button("Apply Filters", id='apply-filters', color="primary", className="w-100")
+            dbc.Button(
+                "Apply Filters",
+                id='apply-filters',
+                color="primary",
+                className="w-100"
+            )
         ], style={"padding": "10px", "maxWidth": "1200px", "margin": "auto"})
 
     def create_alerts_list(self) -> tuple:
