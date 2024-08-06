@@ -1,21 +1,46 @@
 import base64
 import json
-
 import dash
 import pandas as pd
+
 from dash import MATCH, dcc
 from dash.dependencies import Input, Output, State
-
+from app.dash_layouts import DashPageLayouts
 from chatbot.chat_bot import ChatBot
 from config.constants import DatabaseCollections
+from database.db_handler import DatabaseHandler
 from dataframes.dataframe_handler import DataFrameHandler
 from search_engine.search_engine import SearchEngine
 from utils.utilities import Utilities
 
 
 class DashCallbacks:
+    """
+    A class to manage the callbacks for a Dash application. This class initializes the necessary
+    components and registers the callbacks for the Dash application.
+
+    Attributes:
+        dash_app (dash.Dash): The Dash application instance.
+        df_handler (DataFrameHandler): An instance of DataFrameHandler for handling data frame operations.
+        db_handler (DatabaseHandler): An instance of DatabaseHandler for database operations.
+        page_layouts (DashPageLayouts): An instance of DashPageLayouts for managing page layouts.
+        utils (Utilities): An instance of Utilities providing various utility functions.
+        search_engine (SearchEngine): An instance of SearchEngine for handling search-related operations.
+        chat_bot (ChatBot): An instance of ChatBot for handling chatbot interactions.
+    """
+
     def __init__(self, dash_app: dash.Dash, df_handler: DataFrameHandler, db_handler: 'DatabaseHandler',
                  page_layouts: 'DashPageLayouts', utils: Utilities):
+        """
+        Initialize the DashCallbacks with the provided instances and register callbacks.
+
+        Parameters:
+            dash_app (dash.Dash): The Dash application instance.
+            df_handler (DataFrameHandler): An instance of DataFrameHandler for handling data frame operations.
+            db_handler (DatabaseHandler): An instance of DatabaseHandler for database operations.
+            page_layouts (DashPageLayouts): An instance of DashPageLayouts for managing page layouts.
+            utils (Utilities): An instance of Utilities providing various utility functions.
+        """
         self.dash_app = dash_app
         self.df_handler = df_handler
         self.db_handler = db_handler
@@ -25,7 +50,20 @@ class DashCallbacks:
         self.chat_bot = ChatBot(db_handler, utils)
         self.register_callbacks()
 
-    def _update_selection(self, select_all_clicks, clear_all_clicks, options):
+    @staticmethod
+    def _update_selection(select_all_clicks, clear_all_clicks, options):
+        """
+        Update the selection of options based on the button clicked.
+
+        Parameters:
+            select_all_clicks (bool): Indicates if the "select all" button was clicked.
+            clear_all_clicks (bool): Indicates if the "clear all" button was clicked.
+            options (List[dict]): The list of available options, each represented as a dictionary with a 'value' key.
+
+        Returns:
+            List[str] | dash.no_update: A list of values to select if "select all" or "clear all" is clicked,
+            otherwise dash.no_update.
+        """
         ctx = dash.callback_context
 
         if not ctx.triggered:
@@ -39,8 +77,23 @@ class DashCallbacks:
             return []
         return dash.no_update
 
-    def _update_graph(self, data, setup_dataframe_callback, create_graph_callback, *setup_dataframe_args, graph_type = '',
-                      collapsible_list=False):
+    def _update_graph(self, data, setup_dataframe_callback, create_graph_callback,
+                      *setup_dataframe_args, graph_type='', collapsible_list=False):
+        """
+        Updates the graph based on the provided data and callbacks. Optionally includes a collapsible list component.
+
+        Parameters:
+            data (Any): The raw data to be converted into a DataFrame.
+            setup_dataframe_callback (Callable): A callback function to process the DataFrame.
+            create_graph_callback (Callable): A callback function to create the graph.
+            *setup_dataframe_args (Any): Additional arguments to pass to the `setup_dataframe_callback`.
+            graph_type (str, optional): A string representing the type of graph to create. Defaults to ''.
+            collapsible_list (bool, optional): Whether to include a collapsible list component. Defaults to False.
+
+        Returns:
+            Union[tuple, Any]: If `collapsible_list` is True, returns a tuple containing the graph component and the collapsible list component.
+                               Otherwise, returns only the graph component.
+        """
         df = pd.DataFrame(data)
         filtered_df = setup_dataframe_callback(df, *setup_dataframe_args)
         if filtered_df is None:
@@ -53,32 +106,66 @@ class DashCallbacks:
 
         return create_graph_callback(dataframe=filtered_df)
 
-    def update_dynamic_graphs(self, dataframe, graph_type, selected_document, selected_log, selected_user, start_time,
-                              end_time):
-        filtered_df = self.df_handler.filter_dataframe_for_graphs(dataframe, selected_document,selected_user, start_time, end_time)
+    def update_dynamic_graphs(self, dataframe, graph_type, selected_document,
+                              selected_user, start_time, end_time):
+        """
+        Updates dynamic graphs based on the provided data and selected options.
+
+        Parameters:
+            dataframe (pd.DataFrame): The raw data to be filtered and used for graph creation.
+            graph_type (str): The type of graph to create.
+            selected_document (str): The selected document to filter the data.
+            selected_user (str): The selected user to filter the data.
+            start_time (datetime): The start time for filtering the data.
+            end_time (datetime): The end time for filtering the data.
+
+        Returns:
+            tuple: A tuple containing:
+                - The graph component to be displayed.
+                - Optionally, a collapsible list component if applicable.
+        """
+        filtered_df = self.df_handler.filter_dataframe_for_graphs(dataframe, selected_document, selected_user,
+                                                                  start_time, end_time)
 
         if filtered_df is None or filtered_df.empty:
             return self.page_layouts.create_empty_graph(), None
 
         if graph_type == 'Project Time Distribution':
-            return self.page_layouts.create_project_time_distribution_graph(self.df_handler.setup_project_time_distribution_graph_dataframe(filtered_df)), None
+            return self.page_layouts.create_project_time_distribution_graph(
+                self.df_handler.setup_project_time_distribution_graph_dataframe(filtered_df)), None
         elif graph_type == 'Advanced vs. Basic Actions':
-            collapsible_df = self.df_handler.prepare_data_for_collapsible_list(filtered_df, type='advanced_basic_actions')
+            collapsible_df = self.df_handler.prepare_data_for_collapsible_list(filtered_df,
+                                                                               type='advanced_basic_actions')
             collapsible_list = self.page_layouts.create_collapsible_list(collapsible_df, type='advanced_basic_actions')
-            check = self.page_layouts.create_advanced_basic_actions_graph(self.df_handler.setup_advanced_basic_actions_graph_dataframe(filtered_df))
-            return check, collapsible_list
+            graph_component = self.page_layouts.create_advanced_basic_actions_graph(
+                self.df_handler.setup_advanced_basic_actions_graph_dataframe(filtered_df))
+            return graph_component, collapsible_list
         elif graph_type == 'Action Sequence by User':
-            return self.page_layouts.create_action_sequence_scatter_graph(self.df_handler.setup_action_sequence_scatter_graph_dataframe(filtered_df, start_time, end_time)), None
+            return self.page_layouts.create_action_sequence_scatter_graph(
+                self.df_handler.setup_action_sequence_scatter_graph_dataframe(filtered_df, start_time, end_time)), None
         elif graph_type == 'Work Patterns Over Time':
-            return self.page_layouts.create_work_patterns_over_time_graph(self.df_handler.setup_work_patterns_over_time_graph_dataframe(filtered_df)), None
+            return self.page_layouts.create_work_patterns_over_time_graph(
+                self.df_handler.setup_work_patterns_over_time_graph_dataframe(filtered_df)), None
         elif graph_type == 'Repeated Actions By User':
             collapsible_df = self.df_handler.prepare_data_for_collapsible_list(filtered_df, type='repeated_actions')
             collapsible_list = self.page_layouts.create_collapsible_list(collapsible_df, type='repeated_actions')
-            return self.page_layouts.create_repeated_actions_graph(self.df_handler.setup_repeated_actions_by_user_graph_dataframe(filtered_df)), collapsible_list
+            return self.page_layouts.create_repeated_actions_graph(
+                self.df_handler.setup_repeated_actions_by_user_graph_dataframe(filtered_df)), collapsible_list
 
         return self.page_layouts.create_empty_graph(), None
 
     def process_json_filename(self, filename, default_data_source):
+        """
+        Process and generate a unique JSON filename based on whether it is a default data source or an uploaded log.
+        If the filename is for an uploaded log, ensure uniqueness by appending an index if needed.
+
+        Parameters:
+            filename (str): The original filename of the JSON file.
+            default_data_source (bool): A flag indicating if the file is the default data source. If True, returns 'default.json'.
+
+        Returns:
+            str: The processed filename, either 'default.json' or a unique filename for uploaded logs.
+        """
         processed_filename = filename
         if default_data_source:
             processed_filename = "default.json"
@@ -90,7 +177,23 @@ class DashCallbacks:
         return processed_filename
 
     def register_callbacks(self):
-        # Callback to update graphs
+        """
+        Registers callbacks for updating various components of the Dash application.
+        This callback updates the displayed graphs, tabs, data source title, alerts count,
+        and the data of processed and pre-processed dataframes based on user inputs and filter applications.
+
+        Outputs:
+            - 'graphs-tabs-container' style
+            - 'dynamic-tabs' children (graph tabs)
+            - 'data-source-title' (title of the current data source)
+            - 'alerts-count-badge' (count of unread alerts)
+            - 'start-time' and 'end-time' values and their min/max values
+            - 'processed-df' and 'pre-processed-df' data
+
+        Inputs:
+            - 'apply-filters' button click
+            - Current values from various filters and dropdowns
+        """
         @self.dash_app.callback(
             [Output('graphs-tabs-container', 'style'),
              Output('dynamic-tabs', 'children'),
@@ -114,8 +217,29 @@ class DashCallbacks:
              State('graphs-dropdown', 'value')],
             prevent_initial_call=True
         )
-        def update_all_graphs(n_clicks, data, selected_document, selected_log, selected_user, start_time, end_time,
+        def update_all_graphs(data, selected_document, selected_log, selected_user, start_time, end_time,
                               selected_graphs):
+            """
+            Updates all graphs and related components based on the selected filters and data source.
+
+            Parameters:
+                data (dict): Data for the processed dataframe.
+                selected_document (str or list): Selected document(s) for filtering.
+                selected_log (str): The selected log file for updating.
+                selected_user (str or list): Selected user(s) for filtering.
+                start_time (str): The start time for filtering.
+                end_time (str): The end time for filtering.
+                selected_graphs (list): List of selected graph types to display.
+
+            Returns:
+                list: A list of values to update the Dash components:
+                    - Style of 'graphs-tabs-container'
+                    - List of updated graph tabs
+                    - Data source title
+                    - Alerts count badge
+                    - Start and end times and their min/max values
+                    - Processed and pre-processed dataframe data
+            """
 
             if selected_graphs is None:
                 selected_graphs = []
@@ -153,7 +277,7 @@ class DashCallbacks:
             updated_tabs = []
             for graph_type in selected_graphs:
                 figure, collapsible = self.update_dynamic_graphs(filtered_df, graph_type, selected_document,
-                                                                 selected_log, selected_user, value_start_time, value_end_time)
+                                                                 selected_user, value_start_time, value_end_time)
 
                 if collapsible:
                     collapsible_content = collapsible if isinstance(collapsible, list) else [collapsible]
