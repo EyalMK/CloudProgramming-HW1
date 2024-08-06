@@ -1,6 +1,8 @@
 from datetime import datetime
 import logging
 
+from database.db_handler import DatabaseHandler
+
 
 class DatabaseLogger(logging.Handler):
     """
