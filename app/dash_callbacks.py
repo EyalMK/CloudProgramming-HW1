@@ -100,7 +100,8 @@ class DashCallbacks:
 
         if collapsible_list:
             collapsible_df = self.df_handler.prepare_data_for_collapsible_list(df, list_type=graph_type)
-            collapsible_list_component = self.page_layouts.create_collapsible_list(collapsible_df, type=graph_type)
+            collapsible_list_component = self.page_layouts.create_collapsible_list(collapsible_df,
+                                                                                   action_type=graph_type)
             return create_graph_callback(dataframe=filtered_df), collapsible_list_component
 
         return create_graph_callback(dataframe=filtered_df)
@@ -135,7 +136,8 @@ class DashCallbacks:
         elif graph_type == 'Advanced vs. Basic Actions':
             collapsible_df = self.df_handler.prepare_data_for_collapsible_list(filtered_df,
                                                                                list_type='advanced_basic_actions')
-            collapsible_list = self.page_layouts.create_collapsible_list(collapsible_df, type='advanced_basic_actions')
+            collapsible_list = self.page_layouts.create_collapsible_list(collapsible_df,
+                                                                         action_type='advanced_basic_actions')
             graph_component = self.page_layouts.create_advanced_basic_actions_graph(
                 self.df_handler.setup_advanced_basic_actions_graph_dataframe(filtered_df))
             return graph_component, collapsible_list
@@ -148,7 +150,7 @@ class DashCallbacks:
         elif graph_type == 'Repeated Actions By User':
             collapsible_df = self.df_handler.prepare_data_for_collapsible_list(filtered_df,
                                                                                list_type='repeated_actions')
-            collapsible_list = self.page_layouts.create_collapsible_list(collapsible_df, type='repeated_actions')
+            collapsible_list = self.page_layouts.create_collapsible_list(collapsible_df, action_type='repeated_actions')
             return self.page_layouts.create_repeated_actions_graph(
                 self.df_handler.setup_repeated_actions_by_user_graph_dataframe(filtered_df)), collapsible_list
 

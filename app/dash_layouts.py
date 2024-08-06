@@ -694,7 +694,7 @@ class DashPageLayouts:
 
         return occurrences_melted
 
-    def create_collapsible_list(self, actions, type=''):
+    def create_collapsible_list(self, actions, action_type=''):
         """
         Creates a list of collapsible cards based on the specified action type.
 
@@ -708,13 +708,13 @@ class DashPageLayouts:
             List[dbc.Card]: A list of Dash Bootstrap Components cards, each containing a header and collapsible body.
         """
         items = []
-        if type == 'repeated_actions':
+        if action_type == 'repeated_actions':
             for index, (action, group) in enumerate(actions.groupby('Action')):
                 user_descriptions = group[['User', 'Description', 'Count']].values.tolist()
 
                 header = dbc.Button(
                     action,
-                    id={'type': 'toggle', 'index': index, 'category': type},
+                    id={'type': 'toggle', 'index': index, 'category': action_type},
                     color="link",
                     n_clicks=0,
                     style={'text-align': 'left', 'width': '100%', 'padding': '10px', 'border': '1px solid #ddd'}
@@ -728,13 +728,13 @@ class DashPageLayouts:
                             html.Strong("Count: "), f"{desc[2]}"
                         ])) for desc in user_descriptions
                     ])),
-                    id={'type': 'collapse', 'index': index, 'category': type},
+                    id={'type': 'collapse', 'index': index, 'category': action_type},
                     is_open=False
                 )
 
                 items.append(dbc.Card([header, body]))
 
-        elif type == 'advanced_basic_actions':
+        elif action_type == 'advanced_basic_actions':
             advanced_actions = actions[actions['Action Type'] == 'Advanced']
             basic_actions = actions[actions['Action Type'] == 'Basic']
 
@@ -748,7 +748,7 @@ class DashPageLayouts:
 
                 header = dbc.Button(
                     category,
-                    id={'type': 'toggle', 'index': index, 'category': type},
+                    id={'type': 'toggle', 'index': index, 'category': action_type},
                     color="link",
                     n_clicks=0,
                     style={'text-align': 'left', 'width': '100%', 'padding': '10px', 'border': '1px solid #ddd'}
@@ -762,7 +762,7 @@ class DashPageLayouts:
                             html.Strong("Count: "), f"{desc[2]}"
                         ])) for desc in action_descriptions
                     ])),
-                    id={'type': 'collapse', 'index': index, 'category': type},
+                    id={'type': 'collapse', 'index': index, 'category': action_type},
                     is_open=False
                 )
 
