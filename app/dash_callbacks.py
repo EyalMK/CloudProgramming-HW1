@@ -28,6 +28,7 @@ class DashCallbacks:
         chat_bot (ChatBot): An instance of ChatBot for handling chatbot interactions.
     """
 
+    # noinspection PyUnresolvedReferences
     def __init__(self, dash_app: dash.Dash, df_handler: DataFrameHandler, db_handler: 'DatabaseHandler',
                  page_layouts: 'DashPageLayouts', utils: Utilities):
         """
@@ -194,6 +195,8 @@ class DashCallbacks:
             - 'apply-filters' button click
             - Current values from various filters and dropdowns
         """
+
+        # noinspection PyUnusedLocal
         @self.dash_app.callback(
             [Output('graphs-tabs-container', 'style'),
              Output('dynamic-tabs', 'children'),
