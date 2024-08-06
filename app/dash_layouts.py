@@ -231,6 +231,15 @@ class DashPageLayouts:
         return tabs
 
     def landing_page_layout(self):
+        """
+        Creates the layout for the landing page of the ShapeFlow Monitor Tool.
+
+        This method generates a layout that includes an overview of the tool and a list of steps for getting started.
+        Each step is presented in a styled list item with an icon for better visual representation.
+
+        Returns:
+            html.Div: A Div containing the structured layout of the landing page.
+        """
         return self._create_layout("Welcome to the ShapeFlow Monitor Tool", [
             self._create_card("Overview",
                               html.P(
@@ -241,7 +250,6 @@ class DashPageLayouts:
                                   "OnShape platform."),
                               12
                               ),
-
             self._create_card("How to Get Started:",
                               html.Div([
                                   self._create_styled_list_item(
@@ -251,7 +259,7 @@ class DashPageLayouts:
                                       icon="fas fa-upload"),
                                   self._create_styled_list_item(
                                       "Select Default Log:",
-                                      "Mark An uploaded log to be used as the default for analysis, using the "
+                                      "Mark an uploaded log to be used as the default for analysis, using the "
                                       "'Default Data Source' checkbox.",
                                       icon="fas fa-check"),
                                   self._create_styled_list_item(
@@ -282,7 +290,6 @@ class DashPageLayouts:
                               ], style={"list-style-type": "none", "padding": "0"}),
                               12
                               ),
-
         ], style={"max-width": "1200px", "margin": "0 auto", "padding": "20px"})
 
     def alerts_layout(self):
