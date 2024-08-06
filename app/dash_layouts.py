@@ -112,7 +112,7 @@ class DashPageLayouts:
         return self._create_layout("Welcome to the ShapeFlow Monitor Tool", [
             self._create_card("Overview",
                               html.P(
-                                  "The ShapeFlow Monitor Tool is your go-to solution for monitoring and analyzingthe "
+                                  "The ShapeFlow Monitor Tool is your go-to solution for monitoring and analyzing the "
                                   "performance of your OnShape team. Designed with managers in mind, this application "
                                   "provides comprehensive insights into team activity, project progress, "
                                   "and collaboration efficiency by processing log files in JSON format from the "
@@ -294,12 +294,20 @@ class DashPageLayouts:
 
     def create_project_time_distribution_graph(self, dataframe):
         threshold_percentage = 0.4
-        return self._create_pie_chart(df=dataframe,
-                                      names='Tab',
-                                      values='Time Spent (hours)',
-                                      title=f'Project Time Distribution (in Hours) - Minimum threshold: {threshold_percentage}%',
-                                      labels={'Time Spent (hours)': 'Time Spent (Hours)', 'Tab': 'Project Tab'},
-                                      threshold_percentage=threshold_percentage)
+        return self._create_pie_chart(
+            df=dataframe,
+            names='Tab',
+            values='Time Spent (hours)',
+            title=(
+                f'Project Time Distribution (in Hours) - '
+                f'Minimum threshold: {threshold_percentage}%'
+            ),
+            labels={
+                'Time Spent (hours)': 'Time Spent (Hours)',
+                'Tab': 'Project Tab'
+            },
+            threshold_percentage=threshold_percentage
+        )
 
     def create_repeated_actions_graph(self, dataframe):
         if dataframe.empty:
@@ -438,7 +446,8 @@ class DashPageLayouts:
             dbc.Row(children)
         ], style=style if style else {"padding": "20px"})
 
-    def _create_card(self, title: str, content: html, width: int) -> dbc.Col:
+    @staticmethod
+    def _create_card(title: str, content: html, width: int) -> dbc.Col:
         return dbc.Col(dbc.Card([
             dbc.CardHeader(title),
             dbc.CardBody([content])
@@ -455,7 +464,10 @@ class DashPageLayouts:
         default_graph_options = [option['value'] for option in graph_options]
 
         uploaded_logs_options = self.df_handler.filters_data['uploaded-logs']
-        default_log_option = uploaded_logs_options[0] if selected_log_name == "None" and len(uploaded_logs_options) > 0 else selected_log_name
+        if selected_log_name == "None" and len(uploaded_logs_options) > 0:
+            default_log_option = uploaded_logs_options[0]
+        else:
+            default_log_option = selected_log_name
 
         return html.Div([
             html.Div(id='log-switch-trigger', style={'display': 'none'}),
@@ -654,8 +666,8 @@ class DashPageLayouts:
         # Ensure 'Time' column is correctly parsed and drop rows with NaT values
         if working_hours is not None:
             # Define custom tick labels for the x-axis
-            tickvals = list(range(0, 24, 1))  # Values: 0, 1, 2, ..., 23
-            ticktext = [f"{hour}:00" for hour in tickvals]  # Labels: "0:00", "2:00", ..., "22:00"
+            tick_vals = list(range(0, 24, 1))  # Values: 0, 1, 2, ..., 23
+            tick_text = [f"{hour}:00" for hour in tick_vals]  # Labels: "0:00", "2:00", ..., "22:00"
 
             # Create the bar chart with custom tick labels
             fig = px.bar(working_hours, x='Hour', y='ActivityCount', color='User', barmode='group',
@@ -664,8 +676,8 @@ class DashPageLayouts:
             # Update the x-axis with custom tick labels
             fig.update_layout(xaxis=dict(
                 tickmode='array',
-                tickvals=tickvals,
-                ticktext=ticktext
+                tickvals=tick_vals,
+                ticktext=tick_text
             ))
 
             return fig
@@ -694,15 +706,17 @@ class DashPageLayouts:
 
         return occurrences_melted
 
-    def create_collapsible_list(self, actions, action_type=''):
+    @staticmethod
+    def create_collapsible_list(actions, action_type=''):
         """
         Creates a list of collapsible cards based on the specified action type.
 
-        Depending on the action type, this method generates a list of `dbc.Card` components that display actions in a collapsible format.
+        Depending on the action type, this method generates a list of `dbc.Card` components that display actions in a
+        collapsible format.
 
-        Parameters:
-            actions (pd.DataFrame): The DataFrame containing action data. It should include columns relevant to the action type.
-            action_type (str): The type of actions to display. It can be either 'repeated_actions' or 'advanced_basic_actions'.
+        Parameters: actions (pd.DataFrame): The DataFrame containing action data. It should include columns relevant
+        to the action type. action_type (str): The type of actions to display. It can be either 'repeated_actions' or
+        'advanced_basic_actions'.
 
         Returns:
             List[dbc.Card]: A list of Dash Bootstrap Components cards, each containing a header and collapsible body.
@@ -785,7 +799,8 @@ class DashPageLayouts:
                                className="d-flex align-items-center justify-content-center w-100"), width=2)
         ], className="mb-3")
 
-    def _create_upload_component(self) -> html.Div:
+    @staticmethod
+    def _create_upload_component() -> html.Div:
         return html.Div([
             dcc.Loading(
                 id='loading',
@@ -817,7 +832,8 @@ class DashPageLayouts:
                         label="Default data source"
                     ),
                     html.Div(
-                        "* Default data source logs are loaded automatically. Beware: Uploading a new default log will overwrite the existing one.",
+                        "* Default data source logs are loaded automatically."
+                        "Beware: Uploading a new default log will overwrite the existing one.",
                         style={'margin': '0', 'padding': '0', 'fontSize': 'small', 'lineHeight': '1',
                                'marginLeft': '25px'}
                     ),
