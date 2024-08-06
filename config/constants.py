@@ -19,12 +19,30 @@ DEFAULT_MAX_DATE = datetime.now().strftime('%d-%m-%Y')
 
 # Enums
 class RuntimeEnvironments(Enum):
+    """
+    Enum for runtime environments.
+
+    Attributes:
+        DEV: Development environment.
+        PROD: Production environment.
+        TEST: Testing environment.
+    """
     DEV = "DEV"
     PROD = "PROD"
     TEST = "TEST"
 
 
 class DatabaseCollections(Enum):
+    """
+    Enum for database collections.
+
+    Attributes:
+        ONSHAPE_LOGS: Collection path for Onshape logs.
+        UPLOADED_LOGS: Collection path for uploaded logs.
+        GLOSSARY_WORDS: Collection path for glossary words.
+        INDICES_WORDS: Collection path for index words.
+        BOT_PROMPTS: Collection path for chatbot patterns.
+    """
     ONSHAPE_LOGS = "/onShapeLogs"
     UPLOADED_LOGS = "/uploaded-jsons"
     GLOSSARY_WORDS = "/base-glossary-words"
@@ -44,6 +62,7 @@ ACTION_MAP = {
     'close': 'Close',
     'move': 'Move',
     'open': 'Open'
+    # Map actions to their respective categories
 }
 
 
@@ -51,6 +70,12 @@ ACTION_MAP = {
 def load_environment_config():
     """
     Loads and sets environment-specific configurations.
+
+    This function sets environment variables for the application based on
+    the runtime environment. It defaults to production if not specified.
+
+    Returns:
+        RuntimeEnvironments: The current runtime environment.
     """
     os.environ["NGROK_TOKEN"] = "2jBnTrvBD8DEzmYA1Bxx69uBXHH_84Fgk6CD5LHc9Cos4DdGh"
     os.environ["ALERT_TIMEWINDOW"] = "1h"
