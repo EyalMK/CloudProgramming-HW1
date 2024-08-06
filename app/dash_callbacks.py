@@ -71,7 +71,7 @@ class DashCallbacks:
         button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
         if 'select-all' in button_id and select_all_clicks:
-            return [option['value'] for option in options]
+            return options
         elif 'clear-all' in button_id and clear_all_clicks:
             return []
         return dash.no_update

@@ -806,9 +806,6 @@ class DashPageLayouts:
         max_date = self.df_handler.max_date
         min_date = self.df_handler.min_date
 
-        graph_options = self.utils.get_supported_graphs()
-        default_graph_options = [option['value'] for option in graph_options]
-
         uploaded_logs_options = self.df_handler.filters_data['uploaded-logs']
         if selected_log_name == "None" and len(uploaded_logs_options) > 0:
             default_log_option = uploaded_logs_options[0]
@@ -821,8 +818,8 @@ class DashPageLayouts:
                                     'select-all-documents', 'clear-all-documents'),
             self._create_filter_row('user-dropdown', 'Select User', self.df_handler.filters_data['users'],
                                     'select-all-users', 'clear-all-users'),
-            self._create_filter_row('graphs-dropdown', 'Select Graphs', graph_options,
-                                    'select-all-graphs', 'clear-all-graphs', default_value=default_graph_options),
+            self._create_filter_row('graphs-dropdown', 'Select Graphs', self.df_handler.filters_data['graphs'],
+                                    'select-all-graphs', 'clear-all-graphs', default_value=self.df_handler.filters_data['graphs']),
             dbc.Row([
                 dbc.Col(
                     dcc.Dropdown(id='logs-dropdown',

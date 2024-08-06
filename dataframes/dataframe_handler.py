@@ -490,6 +490,9 @@ class DataFrameHandler:
         if 'Description' in self.loaded_df.columns:
             self.filters_data['descriptions'] = [desc for desc in self.loaded_df['Description'].unique()]
 
+        graph_options = self.utils.get_supported_graphs()
+        self.filters_data['graphs'] = [option['value'] for option in graph_options]
+
     def _group_activity_over_time(self):
         """
         Groups the DataFrame by 'Date' and calculates the count of activities for each date.
