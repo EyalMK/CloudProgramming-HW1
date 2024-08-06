@@ -1,7 +1,8 @@
 # DataFrames Handler
 import os
-from datetime import timedelta, datetime
 import pandas as pd
+
+from datetime import datetime
 from config.constants import DatabaseCollections, DEFAULT_MAX_DATE, DEFAULT_MIN_DATE
 
 # Suppress the SettingWithCopyWarning from pandas.
@@ -17,8 +18,9 @@ class DataFrameHandler:
     Attributes:
         db_handler (DatabaseHandler): An instance for interacting with the database.
         utils (Utilities): An instance providing utility functions such as logging.
-        raw_df (pd.DataFrame): The raw data frame from the logs.
         loaded_df (pd.DataFrame): The processed data frame.
+        max_date (datetime): The maximum date for filtering data.
+        min_date (datetime): The minimum date for filtering data.
         filters_data (dict): A dictionary holding filter data for documents, users, descriptions,
             uploaded logs, and graphs.
         activity_over_time (list): A list holding the activity data over time.
@@ -83,11 +85,18 @@ class DataFrameHandler:
 
     def update_with_new_data(self, collection_name, file_name):
         """
-        Update the data frame with new data from the specified collection.
+        Update the data frame with new data from the specified collection and file.
+
+        This method processes and updates the data frame with new data if:
+        - The collection name is set to the default collection.
+        - The `loaded_df` is `None`, indicating no data has been processed yet.
 
         Parameters:
-            collection_name (str): The name of the collection to update data from.
-            :param file_name: The name of the file to update the data from.
+            collection_name (str): The name of the database collection from which to fetch new data.
+            file_name (str): The name of the file containing the new data.
+
+        Raises:
+            Exception: If an error occurs while updating with new data, an error is logged.
         """
         try:
             # Only update with new data if it is set to default or if there is no data processed yet
@@ -233,7 +242,7 @@ class DataFrameHandler:
     @staticmethod
     def setup_project_time_distribution_graph_dataframe(dataframe):
         """
-        Setup the data frame for project time distribution graph.
+        Set up the data frame for project time distribution graph.
 
         Parameters:
             dataframe (pd.DataFrame): The data frame to process.
@@ -265,7 +274,7 @@ class DataFrameHandler:
     @staticmethod
     def setup_advanced_basic_actions_graph_dataframe(dataframe):
         """
-        Setup the data frame for advanced and basic actions graph.
+        Set up the data frame for advanced and basic actions graph.
 
         Parameters:
             dataframe (pd.DataFrame): The data frame to process.
@@ -280,7 +289,7 @@ class DataFrameHandler:
     @staticmethod
     def setup_action_frequency_scatter_graph_dataframe(dataframe, start_date, end_date):
         """
-        Setup the data frame for the action frequency scatter graph by filtering
+        Set up the data frame for the action frequency scatter graph by filtering
         based on the provided date range.
 
         Parameters:
@@ -304,7 +313,7 @@ class DataFrameHandler:
     @staticmethod
     def setup_work_patterns_over_time_graph_dataframe(dataframe):
         """
-        Setup the data frame for the work patterns over time graph.
+        Set up the data frame for the work patterns over time graph.
 
         Parameters:
             dataframe (pd.DataFrame): The data frame to process. It must contain a 'Time' column.
@@ -399,7 +408,8 @@ class DataFrameHandler:
             data_key = next(iter(data))  # First key
         self.loaded_df = pd.DataFrame(data[data_key]['data'])
 
-    def _convert_time_column(self, dataframe):
+    @staticmethod
+    def _convert_time_column(dataframe):
         """
         Ensure the 'Time' column in the provided DataFrame is properly parsed to datetime.
 
