@@ -557,44 +557,106 @@ class DashPageLayouts:
         )
 
     def create_advanced_basic_actions_graph(self, dataframe):
+        """
+        Creates a stacked bar chart comparing advanced vs. basic actions by user.
+
+        Parameters:
+            dataframe (pd.DataFrame): The DataFrame containing the data for the stacked bar chart.
+                It should include 'Action Count', 'User', and 'Action Type' columns.
+
+        Returns:
+            go.Figure: A Plotly figure object representing the stacked bar chart.
+        """
         if dataframe.empty:
             return go.Figure()  # Return an empty graph
 
-        return self._create_stacked_bar_chart(df=dataframe,
-                                              x='Action Count',
-                                              y='User',
-                                              color='Action Type',
-                                              title='Advanced vs. Basic Actions',
-                                              grid=False,
-                                              labels={'User': 'User', 'Action Count': 'Action Count',
-                                                      'Action Type': 'Action Type'},
-                                              orientation='h')
+        return self._create_stacked_bar_chart(
+            df=dataframe,
+            x='Action Count',
+            y='User',
+            color='Action Type',
+            title='Advanced vs. Basic Actions',
+            grid=False,
+            labels={
+                'User': 'User',
+                'Action Count': 'Action Count',
+                'Action Type': 'Action Type'
+            },
+            orientation='h'
+        )
 
     def create_action_sequence_scatter_graph(self, dataframe):
-        return self._create_scatter_chart(df=dataframe,
-                                          x='Time',
-                                          y='Action',
-                                          color='User',
-                                          title='Action Sequence by User',
-                                          labels={'Time': 'Time', 'User': 'User', 'Action': 'Action'})
+        """
+        Creates a scatter chart displaying action sequences by user over time.
+
+        Parameters:
+            dataframe (pd.DataFrame): The DataFrame containing the data for the scatter chart.
+                It should include 'Time', 'Action', and 'User' columns.
+
+        Returns:
+            go.Figure: A Plotly figure object representing the scatter chart.
+        """
+        return self._create_scatter_chart(
+            df=dataframe,
+            x='Time',
+            y='Action',
+            color='User',
+            title='Action Sequence by User',
+            labels={
+                'Time': 'Time',
+                'User': 'User',
+                'Action': 'Action'
+            }
+        )
 
     def create_work_patterns_over_time_graph(self, dataframe):
-        return self._create_stacked_bar_chart(df=dataframe,
-                                              x='Time Interval',
-                                              y='Action Count',
-                                              color='Day',
-                                              orientation='v',
-                                              title='Work Patterns Over Different Time Intervals',
-                                              labels={'Time Interval': 'Time of Day', 'Action Count': 'Action Count',
-                                                      'Day': 'Day of Week'})
+        """
+        Creates a stacked bar chart displaying work patterns over different time intervals.
+
+        Parameters:
+            dataframe (pd.DataFrame): The DataFrame containing the data for the stacked bar chart.
+                It should include 'Time Interval', 'Action Count', and 'Day' columns.
+
+        Returns:
+            go.Figure: A Plotly figure object representing the stacked bar chart.
+        """
+        return self._create_stacked_bar_chart(
+            df=dataframe,
+            x='Time Interval',
+            y='Action Count',
+            color='Day',
+            orientation='v',
+            title='Work Patterns Over Different Time Intervals',
+            labels={
+                'Time Interval': 'Time of Day',
+                'Action Count': 'Action Count',
+                'Day': 'Day of Week'
+            }
+        )
 
     def handle_initial_graph_dataframes(self):
+        """
+        Handles the initial setup of dataframes for graphing by obtaining and processing the necessary data.
+
+        Updates:
+            self.lightly_refined_df (pd.DataFrame): The DataFrame containing lightly refined data for graphs.
+            self.graph_processed_df (pd.DataFrame): The DataFrame processed for use in graph layouts.
+
+        Returns:
+            pd.DataFrame: The processed DataFrame ready for graphing.
+        """
         self.lightly_refined_df = self.df_handler.get_lightly_refined_graphs_dataframe()
         self.graph_processed_df = self.df_handler.process_graphs_layout_dataframe(dataframe=self.lightly_refined_df)
         return self.graph_processed_df
 
     @staticmethod
     def create_header():
+        """
+        Creates a header for the application with a logo, project name, and current date.
+
+        Returns:
+            dbc.Navbar: The header component for the application.
+        """
         current_date = datetime.now().strftime('%d-%m-%Y')
         logo_path = "/static/SFM-logo.png"
         return dbc.Navbar(
@@ -618,6 +680,12 @@ class DashPageLayouts:
         )
 
     def create_side_menu(self):
+        """
+        Creates the side menu for the application with navigation links and alert count.
+
+        Returns:
+            dbc.Col: The side menu component with navigation links and alert badge.
+        """
         alert_count = str(self.df_handler.get_unread_alerts_count())
         return dbc.Col([
             dbc.Nav(
