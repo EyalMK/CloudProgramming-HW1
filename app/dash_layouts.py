@@ -174,31 +174,60 @@ class DashPageLayouts:
 
     @staticmethod
     def create_dynamic_tabs(selected_graphs):
+        """
+        Creates a list of dynamic tabs based on the selected graphs.
+
+        This method generates `dcc.Tab` components for each graph type specified in the selected_graphs list.
+        Each tab contains a graph and optionally additional HTML elements like headers and divs.
+
+        Parameters:
+            selected_graphs (list): A list of strings representing the graph types to include in the tabs.
+
+        Returns:
+            list: A list of `dcc.Tab` components to be included in a Dash layout.
+        """
         tabs = []
-        if 'Project Time Distribution' in selected_graphs:
-            tabs.append(dcc.Tab(label='Project Time Distribution', children=[
-                dcc.Graph(id={'type': 'graph', 'index': 'project-time-distribution-graph'})
-            ]))
-        if 'Advanced vs. Basic Actions' in selected_graphs:
-            tabs.append(dcc.Tab(label='Advanced vs. Basic Actions', children=[
-                dcc.Graph(id={'type': 'graph', 'index': 'advanced-basic-actions-graph'}),
-                html.H2('Advanced & Basic Actions'),
-                html.Div(id={'type': 'collapse-div', 'index': 'advanced-basic-actions'})
-            ]))
-        if 'Action Sequence by User' in selected_graphs:
-            tabs.append(dcc.Tab(label='Action Sequence by User', children=[
-                dcc.Graph(id={'type': 'graph', 'index': 'action-sequence-scatter-graph'})
-            ]))
-        if 'Work Patterns Over Time' in selected_graphs:
-            tabs.append(dcc.Tab(label='Work Patterns Over Time', children=[
-                dcc.Graph(id={'type': 'graph', 'index': 'work-patterns-over-time-graph'})
-            ]))
-        if 'Repeated Actions By User' in selected_graphs:
-            tabs.append(dcc.Tab(label='Repeated Actions By User', children=[
-                dcc.Graph(id={'type': 'graph', 'index': 'repeated-actions-by-user-graph'}),
-                html.H2('Grouped Actions Descriptions:'),
-                html.Div(id={'type': 'collapse-div', 'index': 'repeated-actions'})
-            ]))
+        graph_mapping = {
+            'Project Time Distribution': {
+                'label': 'Project Time Distribution',
+                'children': [
+                    dcc.Graph(id={'type': 'graph', 'index': 'project-time-distribution-graph'})
+                ]
+            },
+            'Advanced vs. Basic Actions': {
+                'label': 'Advanced vs. Basic Actions',
+                'children': [
+                    dcc.Graph(id={'type': 'graph', 'index': 'advanced-basic-actions-graph'}),
+                    html.H2('Advanced & Basic Actions'),
+                    html.Div(id={'type': 'collapse-div', 'index': 'advanced-basic-actions'})
+                ]
+            },
+            'Action Sequence by User': {
+                'label': 'Action Sequence by User',
+                'children': [
+                    dcc.Graph(id={'type': 'graph', 'index': 'action-sequence-scatter-graph'})
+                ]
+            },
+            'Work Patterns Over Time': {
+                'label': 'Work Patterns Over Time',
+                'children': [
+                    dcc.Graph(id={'type': 'graph', 'index': 'work-patterns-over-time-graph'})
+                ]
+            },
+            'Repeated Actions By User': {
+                'label': 'Repeated Actions By User',
+                'children': [
+                    dcc.Graph(id={'type': 'graph', 'index': 'repeated-actions-by-user-graph'}),
+                    html.H2('Grouped Actions Descriptions:'),
+                    html.Div(id={'type': 'collapse-div', 'index': 'repeated-actions'})
+                ]
+            }
+        }
+
+        for graph in selected_graphs:
+            if graph in graph_mapping:
+                tabs.append(dcc.Tab(label=graph_mapping[graph]['label'], children=graph_mapping[graph]['children']))
+
         return tabs
 
     def landing_page_layout(self):
