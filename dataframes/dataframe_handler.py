@@ -527,6 +527,26 @@ class DataFrameHandler:
             self.user_activity = self.loaded_df['User'].value_counts().reset_index(name='ActivityCount')
             self.user_activity.columns = ['User', 'ActivityCount']
 
+    def _format_time_window(self, time_window):
+        """
+        Format the time window as "X minutes" or "Y hours".
+
+        Parameters:
+            time_window (str or timedelta): The time window to format.
+
+        Returns:
+            str: The formatted time window.
+        """
+        if isinstance(time_window, str):
+            time_window = pd.Timedelta(time_window)
+        total_seconds = int(time_window.total_seconds())
+        hours, remainder = divmod(total_seconds, 3600)
+        minutes, _ = divmod(remainder, 60)
+
+        if hours > 0:
+            return f"{hours} hours" if minutes == 0 else f"{hours} hours and {minutes} minutes"
+        return f"{minutes} minutes"
+
     def _undo_redo_activity_detection(self):
         """
         Detects and generates alerts for high frequency of 'Undo' and 'Redo' actions within a time window.
@@ -536,12 +556,13 @@ class DataFrameHandler:
         redo_undo_df = self.loaded_df[self.loaded_df['Description'].str.contains('Undo|Redo', case=False)].copy()
 
         # Set a time window for detecting high frequency of actions
-        configured_time_window = os.environ["ALERT_TIMEWINDOW"]
+        configured_time_window = os.environ.get("ALERT_TIMEWINDOW", "1h")
+        formatted_time_window = self._format_time_window(configured_time_window)
         redo_undo_df['TimeWindow'] = redo_undo_df['Time'].dt.floor(configured_time_window)
         grouped = redo_undo_df.groupby(['User', 'Document', 'TimeWindow']).size().reset_index(name='Count')
 
         # Filter the groups that exceed the threshold
-        configured_threshold = int(os.environ["UNDO_REDO_THRESHOLD"])
+        configured_threshold = int(os.environ.get("UNDO_REDO_THRESHOLD", 15))
         alerts = grouped[grouped['Count'] > configured_threshold].copy()
 
         # Prepare the alerts DataFrame
@@ -549,16 +570,116 @@ class DataFrameHandler:
             alerts['Time'] = alerts['TimeWindow'].dt.strftime('%H:%M:%S %d-%m-%Y')
             alerts['Description'] = (
                 f'More than {configured_threshold} redos/undos detected '
-                f'within {configured_time_window}'
+                f'within {formatted_time_window}'
             )
+            alerts['Indication'] = 'difficulty dealing with a certain challenge'
             alerts['Status'] = 'unread'
-            self.alerts_df = alerts[['Time', 'User', 'Description', 'Document', 'Status']]
+            self.alerts_df = alerts[['Time', 'User', 'Description', 'Document', 'Indication', 'Status']]
         else:
-            self.alerts_df = pd.DataFrame(columns=['Time', 'User', 'Description', 'Document', 'Status'])
+            self.alerts_df = pd.DataFrame(columns=['Time', 'User', 'Description', 'Document', 'Indication', 'Status'])
+
+    def _context_switching_detection(self):
+        """
+        Detects and generates alerts for frequent context switching within a time window.
+        Updates the `alerts_df` attribute with detected alerts.
+        """
+        # Set a time window and threshold for detecting frequent context switching
+        time_window = pd.Timedelta(minutes=int(os.environ.get("CONTEXT_SWITCH_TIMEWINDOW", 30)))
+        formatted_time_window = self._format_time_window(time_window)
+        threshold = int(os.environ.get("CONTEXT_SWITCH_THRESHOLD", 5))
+
+        # Initialize an empty list to store the context switching alerts
+        context_switch_alerts = []
+
+        # Iterate over each user
+        for user in self.loaded_df['User'].unique():
+            user_data = self.loaded_df[self.loaded_df['User'] == user].sort_values(by='Time')
+
+            # Track the last document and tab to detect context switches
+            last_document = None
+            last_tab = None
+            switch_count = 0
+            switch_start_time = None
+
+            for i, row in user_data.iterrows():
+                current_document = row['Document']
+                current_tab = row['Tab']
+                current_time = row['Time']
+
+                # Detect context switch
+                if current_document != last_document or current_tab != last_tab:
+                    if switch_start_time is None:
+                        switch_start_time = current_time
+
+                    switch_count += 1
+                    last_document = current_document
+                    last_tab = current_tab
+
+                    # Check if the count exceeds the threshold within the time window
+                    if switch_count >= threshold and (current_time - switch_start_time <= time_window):
+                        context_switch_alerts.append({
+                            'User': user,
+                            'Start Time': switch_start_time,
+                            'End Time': current_time,
+                            'Switch Count': switch_count,
+                            'Description': f'{threshold} context switches detected in {formatted_time_window}',
+                            'Indication': 'multitasking or distraction',
+                            'Status': 'unread'
+                        })
+
+                        # Reset the count and start time to prevent multiple alerts within the same window
+                        switch_count = 0
+                        switch_start_time = None
+                        break  # Move to the next user or continue checking new data
+
+                # Reset the tracking if the current time exceeds the time window
+                if switch_start_time is not None and current_time - switch_start_time > time_window:
+                    switch_count = 0
+                    switch_start_time = None
+
+        # Convert the alerts to a DataFrame
+        if context_switch_alerts:
+            context_switch_alerts_df = pd.DataFrame(context_switch_alerts)
+            context_switch_alerts_df['Time'] = context_switch_alerts_df['Start Time'].dt.strftime('%H:%M:%S %d-%m-%Y')
+            context_switch_alerts_df['Document'] = "N/A"
+            context_switch_alerts_df = context_switch_alerts_df[['Time', 'User', 'Description', 'Document', 'Indication', 'Status']]
+            self.alerts_df = pd.concat([self.alerts_df, context_switch_alerts_df], ignore_index=True)
+
+    def _cancellation_detection(self):
+        """
+        Detects and generates alerts for high frequency of cancellations within a time window.
+        Updates the `alerts_df` attribute with detected alerts.
+        """
+        # Set a time window and threshold for detecting high frequency of cancellations
+        time_window = os.environ.get("CANCELLATION_TIMEWINDOW", "0.5h")
+        formatted_time_window = self._format_time_window(time_window)
+        threshold = int(os.environ.get("CANCELLATION_THRESHOLD", 3))
+
+        # Filter for cancellation actions
+        cancellation_df = self.loaded_df[self.loaded_df['Description'].str.contains('Cancel', case=False)].copy()
+
+        # Set a time window for detecting high frequency of actions
+        cancellation_df['TimeWindow'] = cancellation_df['Time'].dt.floor(time_window)
+        grouped = cancellation_df.groupby(['User', 'Document', 'TimeWindow']).size().reset_index(name='Count')
+
+        # Filter the groups that exceed the threshold
+        alerts = grouped[grouped['Count'] >= threshold].copy()
+
+        # Prepare the alerts DataFrame
+        if not alerts.empty:
+            alerts['Time'] = alerts['TimeWindow'].dt.strftime('%H:%M:%S %d-%m-%Y')
+            alerts['Description'] = (
+                f'At least {threshold} cancellations detected within {formatted_time_window}'
+            )
+            alerts['Indication'] = 'indecisiveness or encountering problems while working'
+            alerts['Status'] = 'unread'
+            self.alerts_df = pd.concat([self.alerts_df, alerts[['Time', 'User', 'Description', 'Document', 'Indication', 'Status']]], ignore_index=True)
 
     def _generate_alerts_df(self):
         """
-        Generates alerts DataFrame by detecting high frequency of 'Undo' and 'Redo' actions.
+        Generates alerts DataFrame by detecting various alerts.
         Updates the `alerts_df` attribute with the generated alerts.
         """
         self._undo_redo_activity_detection()
+        self._context_switching_detection()
+        self._cancellation_detection()

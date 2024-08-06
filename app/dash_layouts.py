@@ -304,9 +304,9 @@ class DashPageLayouts:
         """
         alerts_list, unread_alerts_count = self.create_alerts_list()
         return self._create_layout("Operations Alerts", [
-            self._create_card("Recent Alerts", html.Div(id='alerts-list', children=alerts_list), 12),
+            self._create_card("Recent Alerts", html.Div(id='alerts-list', children=alerts_list), 16),
             self._create_card("Acknowledge All", dbc.Button("Acknowledge All", color="success", className="w-100",
-                                                            id="acknowledge-all-button"), 12),
+                                                            id="acknowledge-all-button"), 16),
         ])
 
     @staticmethod
@@ -892,11 +892,13 @@ class DashPageLayouts:
             alerts_list = html.P("No alerts to display", style={"color": "grey"})
         else:
             alerts_list = html.Ul([
-                html.Li(
-                    f"{row['Time']} - {row['Description']} by User: {row['User']} in Document: {row['Document']}",
-                    style={"color": "grey" if row['Status'] == "read" else "black",
-                           "fontWeight": "bold" if row['Status'] == "unread" else "normal"}
-                ) for _, row in self.df_handler.alerts_df.iterrows()
+                html.Li([
+                        html.Span(
+                            f"{row['Time']} - {row['Description']} by User: {row['User']} in Document: {row['Document']} - ",
+                            style={"color": "grey" if row['Status'] == "read" else "black",
+                                   "fontWeight": "bold" if row['Status'] == "unread" else "normal"}),
+                        html.Span(f"indicating {row['Indication']}", style={"fontWeight": "normal"})
+                    ]) for _, row in self.df_handler.alerts_df.iterrows()
             ], id='alerts-list', className="list-unstyled")
 
         unread_alerts_count = self.df_handler.get_unread_alerts_count()

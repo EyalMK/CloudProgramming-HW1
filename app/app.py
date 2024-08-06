@@ -77,7 +77,7 @@ class App:
             print(f'Public URL: {public_url}')
             os.environ["BASE_URL"] = public_url
         except Exception as e:
-            self.utils.logger.warn(f"NGROK Tunnel error: {e}. Skipping ngrok setup.")
+            self.utils.logger.warn(f"Skipping ngrok setup... use your own authentication token, as the current one is inuse at this time.")
             os.environ["BASE_URL"] = f"http://127.0.0.1:{PORT}"
 
     def _setup_routes(self):
@@ -121,13 +121,13 @@ class App:
                 if tunnels:
                     return tunnels[0]['public_url']
         except requests.exceptions.RequestException:
-            self.utils.logger.warn(f"Ngrok tunnel not found")
+            self.utils.logger.info(f"Ngrok tunnel not found. Connecting to a new tunnel...")
 
         try:
             ngrok.set_auth_token(os.environ["NGROK_TOKEN"])
             return ngrok.connect(PORT).public_url
         except Exception as e:
-            self.utils.logger.error(f"Failed to start ngrok tunnel: {e}")
+            self.utils.logger.warn(f"Failed to start ngrok tunnel: {e}")
             raise
 
     def run(self):

@@ -78,8 +78,13 @@ def load_environment_config():
         RuntimeEnvironments: The current runtime environment.
     """
     os.environ["NGROK_TOKEN"] = "2jBnTrvBD8DEzmYA1Bxx69uBXHH_84Fgk6CD5LHc9Cos4DdGh"
-    os.environ["ALERT_TIMEWINDOW"] = "1h"
+
+    os.environ["ALERT_TIMEWINDOW"] = "1h"  # 1 hour
     os.environ["UNDO_REDO_THRESHOLD"] = "15"
+    os.environ["CONTEXT_SWITCH_TIMEWINDOW"] = "30"  # In minutes
+    os.environ["CONTEXT_SWITCH_THRESHOLD"] = "10"
+    os.environ["CANCELLATION_TIMEWINDOW"] = "0.2h"  # 12 minutes
+    os.environ["CANCELLATION_THRESHOLD"] = "4"
 
     runtime_env = os.environ.get("RUNTIME_ENVIRONMENT", RuntimeEnvironments.PROD.value)
     os.environ["RUNTIME_ENVIRONMENT"] = runtime_env
