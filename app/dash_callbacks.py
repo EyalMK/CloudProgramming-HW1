@@ -223,6 +223,7 @@ class DashCallbacks:
             Updates all graphs and related components based on the selected filters and data source.
 
             Parameters:
+                n_clicks (int): The number of times the 'apply-filters' button has been clicked.
                 data (dict): Data for the processed dataframe.
                 selected_document (str or list): Selected document(s) for filtering.
                 selected_log (str): The selected log file for updating.

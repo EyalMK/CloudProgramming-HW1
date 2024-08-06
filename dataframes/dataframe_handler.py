@@ -304,8 +304,8 @@ class DataFrameHandler:
 
         Parameters:
             dataframe (pd.DataFrame): The data frame to process. It must contain 'Time' and 'User' columns.
-            start_date (str or pd.Timestamp): The start date for filtering.
-            end_date (str or pd.Timestamp): The end date for filtering.
+            start_date (datetime.pyi): The start date for filtering.
+            end_date (datetime.pyi): The end date for filtering.
 
         Returns:
             pd.DataFrame or None: The filtered data frame containing actions within the specified date range,
@@ -539,7 +539,10 @@ class DataFrameHandler:
         # Prepare the alerts DataFrame
         if not alerts.empty:
             alerts['Time'] = alerts['TimeWindow'].dt.strftime('%H:%M:%S %d-%m-%Y')
-            alerts['Description'] = f'More than {configured_threshold} redos/undos detected within {configured_time_window}'
+            alerts['Description'] = (
+                f'More than {configured_threshold} redos/undos detected '
+                f'within {configured_time_window}'
+            )
             alerts['Status'] = 'unread'
             self.alerts_df = alerts[['Time', 'User', 'Description', 'Document', 'Status']]
         else:
