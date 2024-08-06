@@ -1,13 +1,15 @@
 import os
+
+import dash
+import dash_bootstrap_components as dbc
 import requests
+from flask import Flask, send_from_directory
+from pyngrok import ngrok
+
 from app.dash_layouts import DashPageLayouts
 from config.constants import FONT_AWESOME_CDN, RuntimeEnvironments, PORT, PROJECT_NAME
 from database.db_handler import DatabaseHandler
 from utils.utilities import Utilities
-import dash
-import dash_bootstrap_components as dbc
-from flask import Flask, send_from_directory
-from pyngrok import ngrok
 
 
 class App:

@@ -1,7 +1,9 @@
 import base64
 import json
-import pandas as pd
+
 import dash
+import pandas as pd
+from dash import MATCH, dcc
 from dash.dependencies import Input, Output, State
 
 from chatbot.chat_bot import ChatBot
@@ -9,7 +11,6 @@ from config.constants import DatabaseCollections
 from dataframes.dataframe_handler import DataFrameHandler
 from search_engine.search_engine import SearchEngine
 from utils.utilities import Utilities
-from dash import MATCH, dcc, html
 
 
 class DashCallbacks:

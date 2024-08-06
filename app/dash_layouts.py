@@ -1,15 +1,16 @@
 from datetime import datetime
 
-from app.dash_callbacks import DashCallbacks
-from dataframes.dataframe_handler import DataFrameHandler
-from config.constants import PROJECT_NAME, DatabaseCollections
 import dash
-from dash import dcc, dash_table, Output, Input, State
-from dash import html
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from dash import dcc, dash_table
+from dash import html
+
+from app.dash_callbacks import DashCallbacks
+from config.constants import PROJECT_NAME
+from dataframes.dataframe_handler import DataFrameHandler
 
 
 class DashPageLayouts:
