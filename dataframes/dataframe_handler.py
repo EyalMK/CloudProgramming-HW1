@@ -116,8 +116,10 @@ class DataFrameHandler:
         Parameters:
             collection_name (str): The collection name containing the data belonging to file_name.
             file_name (str): The name of the file containing the new data.
-        """  # Process the newly uploaded data
-        # Don't cache default data source, since it can be overridden later (the overriding file is also called default.json,
+        """
+        # Process the newly uploaded data
+        # Don't cache default data source, since it can be overridden later
+        # (the overriding file is also called default.json,
         # a solution would be to add key field to log_cache where key is the key from Firebase collections).
         if file_name in self.log_cache and file_name != "default.json":
             data = self.log_cache[file_name]
