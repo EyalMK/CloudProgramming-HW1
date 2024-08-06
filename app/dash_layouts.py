@@ -293,6 +293,15 @@ class DashPageLayouts:
         ], style={"max-width": "1200px", "margin": "0 auto", "padding": "20px"})
 
     def alerts_layout(self):
+        """
+        Creates the layout for the Operations Alerts page.
+
+        This method generates a layout that displays recent alerts and a button to acknowledge all alerts. The alerts
+        are displayed in a styled list, and the "Acknowledge All" button is styled to fit the card.
+
+        Returns:
+            html.Div: A Div containing the structured layout of the alerts page.
+        """
         alerts_list, unread_alerts_count = self.create_alerts_list()
         return self._create_layout("Operations Alerts", [
             self._create_card("Recent Alerts", html.Div(id='alerts-list', children=alerts_list), 12),
@@ -302,6 +311,17 @@ class DashPageLayouts:
 
     @staticmethod
     def _create_styled_list_item(header: str, text: str, icon: str = None) -> html.Div:
+        """
+        Creates a styled list item with an optional icon.
+
+        Parameters:
+            header (str): The header text for the list item.
+            text (str): The descriptive text for the list item.
+            icon (str, optional): The class name for an optional icon to be displayed.
+
+        Returns:
+            html.Div: A Div containing the styled list item.
+        """
         return html.Div(
             [
                 html.I(className=icon, style={"margin-right": "10px", "color": "#007bff"}) if icon else None,
@@ -313,7 +333,16 @@ class DashPageLayouts:
         )
 
     @staticmethod
-    def text_search_layout():
+    def text_search_layout() -> html.Div:
+        """
+        Creates the layout for a text search interface.
+
+        This layout includes an input field for entering search queries and a search button with an icon.
+        The search button triggers the search action, and the results are displayed below the input field.
+
+        Returns:
+            html.Div: A Div containing the text search input, button, and output area.
+        """
         return html.Div(
             [
                 dbc.Row(
@@ -323,10 +352,13 @@ class DashPageLayouts:
                             width=8
                         ),
                         dbc.Col(
-                            dbc.Button(children=html.I(className="fas fa-search", style=dict(display="inline-block")),
-                                       id="search-button",
-                                       n_clicks=0, size='lg',
-                                       style=dict(fontSize='1.7vh', backgroundColor="#007BC4", textAlign="center")),
+                            dbc.Button(
+                                children=html.I(className="fas fa-search", style={"display": "inline-block"}),
+                                id="search-button",
+                                n_clicks=0,
+                                size='lg',
+                                style={"fontSize": '1.7vh', "backgroundColor": "#007BC4", "textAlign": "center"}
+                            ),
                             width=4
                         )
                     ],
