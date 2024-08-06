@@ -1,9 +1,8 @@
 # Database Handler
 import logging
+
 from typing import Any
-
 from firebase import firebase
-
 from config.constants import DatabaseCollections
 
 

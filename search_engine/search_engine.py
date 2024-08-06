@@ -1,6 +1,6 @@
 import re
-from nltk.stem import PorterStemmer
 
+from nltk.stem import PorterStemmer
 from config.constants import DatabaseCollections, ONSHAPE_GLOSSARY_URL
 from search_engine.scraper import Scraper
 

@@ -1,5 +1,6 @@
 # Main
 import os
+
 from pyngrok import conf
 from app.app import App
 from config.constants import RuntimeEnvironments, DB_CONN_URL, runtime_environment

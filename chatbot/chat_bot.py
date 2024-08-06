@@ -1,4 +1,3 @@
-import nltk
 from nltk.chat.util import Chat, reflections
 from chatbot.patterns_handler import PatternsHandler
 

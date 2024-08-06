@@ -1,6 +1,6 @@
-from datetime import datetime
 import logging
 
+from datetime import datetime
 from database.db_handler import DatabaseHandler
 
 

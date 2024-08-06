@@ -1,8 +1,9 @@
 # Utilities
 import logging
+
+from config.constants import ACTION_MAP
 from config.constants import PROJECT_NAME, RuntimeEnvironments, runtime_environment
 from logger.database_logger import DatabaseLogger
-from config.constants import ACTION_MAP
 
 
 class Utilities:

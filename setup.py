@@ -1,5 +1,6 @@
-from setuptools import setup, find_packages
 import codecs
+
+from setuptools import setup, find_packages
 
 # Read the content of the README file for the long description
 with codecs.open('README.md', 'r', 'utf-8') as f:
