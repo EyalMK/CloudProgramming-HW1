@@ -216,7 +216,7 @@ class DashCallbacks:
              State('graphs-dropdown', 'value')],
             prevent_initial_call=True
         )
-        def update_all_graphs(data, selected_document, selected_log, selected_user, start_time, end_time,
+        def update_all_graphs(n_clicks, data, selected_document, selected_log, selected_user, start_time, end_time,
                               selected_graphs):
             """
             Updates all graphs and related components based on the selected filters and data source.

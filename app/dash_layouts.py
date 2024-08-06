@@ -204,7 +204,7 @@ class DashPageLayouts:
         return html.Div(
             dash_table.DataTable(
                 columns=[
-                    {"name": "Term", "id": "term"},
+                    {"name": "Index (stemmed)", "id": "term"},
                     {"name": "Occurrences", "id": "occurrences"}
                 ],
                 data=data,
