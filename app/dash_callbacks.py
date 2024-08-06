@@ -9,7 +9,7 @@ from config.constants import DatabaseCollections
 from dataframes.dataframe_handler import DataFrameHandler
 from search_engine.search_engine import SearchEngine
 from utils.utilities import Utilities
-from dash import MATCH
+from dash import MATCH, dcc, html
 
 
 class DashCallbacks:
@@ -33,9 +33,12 @@ class DashCallbacks:
         button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
         if 'select-all' in button_id and select_all_clicks:
-            return [option for option in options]
+            # כאן אנחנו מחזירים את כל הערכים המופיעים ברשימה 'options'
+            return [option['value'] for option in options]
         elif 'clear-all' in button_id and clear_all_clicks:
+            # כאן אנחנו מחזירים רשימה ריקה כדי לנקות את כל הבחירות
             return []
+        return dash.no_update
 
     def _update_graph(self, data, setup_dataframe_callback, create_graph_callback, *setup_dataframe_args, graph_type = '',
                       collapsible_list=False):
@@ -51,16 +54,36 @@ class DashCallbacks:
 
         return create_graph_callback(dataframe=filtered_df)
 
+    def update_dynamic_graphs(self, dataframe, graph_type, selected_document, selected_log, selected_user, start_time,
+                              end_time):
+        filtered_df = self.df_handler.filter_dataframe_for_graphs(dataframe, selected_document,selected_user, start_time, end_time)
+
+        if filtered_df is None or filtered_df.empty:
+            return self.page_layouts.create_empty_graph(), None
+
+        if graph_type == 'Project Time Distribution':
+            return self.page_layouts.create_project_time_distribution_graph(self.df_handler.setup_project_time_distribution_graph_dataframe(filtered_df)), None
+        elif graph_type == 'Advanced vs. Basic Actions':
+            collapsible_df = self.df_handler.prepare_data_for_collapsible_list(filtered_df, type='advanced_basic_actions')
+            collapsible_list = self.page_layouts.create_collapsible_list(collapsible_df, type='advanced_basic_actions')
+            check = self.page_layouts.create_advanced_basic_actions_graph(self.df_handler.setup_advanced_basic_actions_graph_dataframe(filtered_df))
+            return check, collapsible_list
+        elif graph_type == 'Action Frequency by User':
+            return self.page_layouts.create_action_frequency_scatter_graph(self.df_handler.setup_action_frequency_scatter_graph_dataframe(filtered_df,start_time,end_time)), None
+        elif graph_type == 'Work Patterns Over Time':
+            return self.page_layouts.create_work_patterns_over_time_graph(self.df_handler.setup_work_patterns_over_time_graph_dataframe(filtered_df)), None
+        elif graph_type == 'Repeated Actions By User':
+            collapsible_df = self.df_handler.prepare_data_for_collapsible_list(filtered_df, type='repeated_actions')
+            collapsible_list = self.page_layouts.create_collapsible_list(collapsible_df, type='repeated_actions')
+            return self.page_layouts.create_repeated_actions_graph(self.df_handler.setup_repeated_actions_by_user_graph_dataframe(filtered_df)), collapsible_list
+
+        return self.page_layouts.create_empty_graph(), None
+
     def register_callbacks(self):
         # Callback to update graphs
         @self.dash_app.callback(
-            [Output('action-frequency-scatter-graph', 'figure'),
-             Output('work-patterns-over-time-graph', 'figure'),
-             Output('project-time-distribution-graph', 'figure'),
-             Output('advanced-basic-actions-graph', 'figure'),
-             Output('repeated-actions-by-user-graph', 'figure'),
-             Output('grouped-actions-div', 'children'),
-             Output('grouped-actions-divergence', 'children'),
+            [Output('graphs-tabs-container', 'style'),
+             Output('dynamic-tabs', 'children'),
              Output('data-source-title', 'children'),
              Output('alerts-count-badge', 'children', allow_duplicate=True),
              Output('start-time', 'value'),
@@ -73,14 +96,22 @@ class DashCallbacks:
              Output('pre-processed-df', 'data')],
             [Input('apply-filters', 'n_clicks')],
             [State('processed-df', 'data'),
-             dash.dependencies.State('document-dropdown', 'value'),
-             dash.dependencies.State('logs-dropdown', 'value'),
-             dash.dependencies.State('user-dropdown', 'value'),
-             dash.dependencies.State('start-time', 'value'),
-             dash.dependencies.State('end-time', 'value')],
-            prevent_initial_call='initial_duplicate'
+             State('document-dropdown', 'value'),
+             State('logs-dropdown', 'value'),
+             State('user-dropdown', 'value'),
+             State('start-time', 'value'),
+             State('end-time', 'value'),
+             State('graphs-dropdown', 'value')],
+            prevent_initial_call=True
         )
-        def update_all_graphs(n_clicks, data, selected_document, selected_log, selected_user, start_time, end_time):
+        def update_all_graphs(n_clicks, data, selected_document, selected_log, selected_user, start_time, end_time,
+                              selected_graphs):
+
+            if selected_graphs is None:
+                selected_graphs = []
+
+            tabs_style = {'display': 'block'} if selected_graphs else {'display': 'none'}
+
             dataframe = pd.DataFrame(data)
             value_start_time = start_time
             value_end_time = end_time
@@ -104,75 +135,33 @@ class DashCallbacks:
             filtered_df = self.df_handler.filter_dataframe_for_graphs(dataframe, selected_document,
                                                                       selected_user, value_start_time, value_end_time)
 
-            if filtered_df is None:
-                return [dash.no_update] * 17
+            if filtered_df is None or filtered_df.empty:
+                return [tabs_style, [], dash.no_update, dash.no_update,
+                        value_start_time, full_range_start_time, full_range_end_time,
+                        value_end_time, full_range_start_time, full_range_end_time,
+                        self.page_layouts.graph_processed_df.to_dict(), self.page_layouts.lightly_refined_df.to_dict()]
 
-            ctx = dash.callback_context
-            if not ctx.triggered:
-                return [dash.no_update] * 17
-            else:
-                input_id = ctx.triggered[0]['prop_id'].split('.')[0]
+            updated_tabs = []
+            for graph_type in selected_graphs:
+                figure, collapsible = self.update_dynamic_graphs(filtered_df, graph_type, selected_document,
+                                                                 selected_log, selected_user, value_start_time, value_end_time)
 
-            fig_action_frequency = fig_work_patterns = fig_project_time = fig_repeated_actions = fig_advanced_basics_actions = self.page_layouts.create_empty_graph()
-            collapsible_list = "No data available"
-            collapsible_actions_list = "No data available"
-            # print all columns of filtered_df
-            if input_id == 'apply-filters':
-                fig_action_frequency = self._update_graph(
-                    filtered_df,
-                    self.df_handler.setup_action_frequency_scatter_graph_dataframe,
-                    self.page_layouts.create_action_frequency_scatter_graph,
-                    value_start_time,
-                    value_end_time
-                )
-                fig_work_patterns = self._update_graph(
-                    filtered_df,
-                    self.df_handler.setup_work_patterns_over_time_graph_dataframe,
-                    self.page_layouts.create_work_patterns_over_time_graph,
-                    graph_type='work_patterns'
-                )
-                fig_project_time = self._update_graph(
-                    filtered_df,
-                    self.df_handler.setup_project_time_distribution_graph_dataframe,
-                    self.page_layouts.create_project_time_distribution_graph,
-                    graph_type='project_time_distribution'
-                )
-                fig_repeated_actions, collapsible_list = self._update_graph(
-                    filtered_df,
-                    self.df_handler.setup_repeated_actions_by_user_graph_dataframe,
-                    self.page_layouts.create_repeated_actions_graph,
-                    graph_type='repeated_actions',
-                    collapsible_list=True
-                )
-                fig_advanced_basics_actions, collapsible_actions_list = self._update_graph(
-                    filtered_df,
-                    self.df_handler.setup_advanced_basic_actions_graph_dataframe,
-                    self.page_layouts.create_advanced_basic_actions_graph,
-                    graph_type='advanced_basic_actions',
-                    collapsible_list=True
-                )
+                if collapsible:
+                    collapsible_content = collapsible if isinstance(collapsible, list) else [collapsible]
+                else:
+                    collapsible_content = []
 
-            # Update the data source title if filters are applied
+                tab_content = [dcc.Graph(figure=figure)] + collapsible_content
+
+                updated_tabs.append(dcc.Tab(label=graph_type, children=tab_content))
+
             new_data_source_title = selected_log if selected_log else self.page_layouts.data_source_title
             data_source_title = f"Current Data Source - {new_data_source_title}"
 
-            return fig_action_frequency, \
-                fig_work_patterns, \
-                fig_project_time, \
-                fig_advanced_basics_actions, \
-                fig_repeated_actions, \
-                collapsible_list, \
-                collapsible_actions_list, \
-                data_source_title, \
-                str(self.df_handler.get_unread_alerts_count()), \
-                value_start_time, \
-                full_range_start_time, \
-                full_range_end_time, \
-                value_end_time, \
-                full_range_start_time, \
-                full_range_end_time,\
-                self.page_layouts.graph_processed_df.to_dict(), \
-                self.page_layouts.lightly_refined_df.to_dict()
+            return [tabs_style, updated_tabs, data_source_title, str(self.df_handler.get_unread_alerts_count()),
+                    value_start_time, full_range_start_time, full_range_end_time,
+                    value_end_time, full_range_start_time, full_range_end_time,
+                    self.page_layouts.graph_processed_df.to_dict(), self.page_layouts.lightly_refined_df.to_dict()]
 
         # Combined callback to handle file upload and submit
         @self.dash_app.callback(

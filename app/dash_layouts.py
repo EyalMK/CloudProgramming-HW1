@@ -63,28 +63,39 @@ class DashPageLayouts:
             self._create_card("Filters", self._create_filters(), 12),
             dcc.Store(id='processed-df', data=self.graph_processed_df.to_dict()),
             dcc.Store(id='pre-processed-df', data=self.lightly_refined_df.to_dict()),
-            dcc.Tabs([
-                dcc.Tab(label='Project Time Distribution', children=[
-                    dcc.Graph(id='project-time-distribution-graph')
-                ]),
-                dcc.Tab(label='Advanced vs. Basic Actions', children=[
-                    dcc.Graph(id='advanced-basic-actions-graph'),
-                    html.H2('Advanced & Basic Actions'),
-                    html.Div(id='grouped-actions-divergence')
-                ]),
-                dcc.Tab(label='Action Frequency by User', children=[
-                    dcc.Graph(id='action-frequency-scatter-graph')
-                ]),
-                dcc.Tab(label='Work Patterns Over Time', children=[
-                    dcc.Graph(id='work-patterns-over-time-graph')
-                ]),
-                dcc.Tab(label='Repeated Actions By User', children=[
-                    dcc.Graph(id='repeated-actions-by-user-graph'),
-                    html.H2('Grouped Actions Descriptions:'),
-                    html.Div(id='grouped-actions-div')
-                ]),
+            dcc.Store(id='show-graphs', data=False),
+            html.Div(id='graphs-tabs-container', style={'display': 'none'}, children=[
+                dcc.Tabs(id='dynamic-tabs')
             ])
         ])
+
+    def create_dynamic_tabs(self, selected_graphs):
+        tabs = []
+        if 'Project Time Distribution' in selected_graphs:
+            tabs.append(dcc.Tab(label='Project Time Distribution', children=[
+                dcc.Graph(id={'type': 'graph', 'index': 'project-time-distribution-graph'})
+            ]))
+        if 'Advanced vs. Basic Actions' in selected_graphs:
+            tabs.append(dcc.Tab(label='Advanced vs. Basic Actions', children=[
+                dcc.Graph(id={'type': 'graph', 'index': 'advanced-basic-actions-graph'}),
+                html.H2('Advanced & Basic Actions'),
+                html.Div(id={'type': 'collapse-div', 'index': 'advanced-basic-actions'})
+            ]))
+        if 'Action Frequency by User' in selected_graphs:
+            tabs.append(dcc.Tab(label='Action Frequency by User', children=[
+                dcc.Graph(id={'type': 'graph', 'index': 'action-frequency-scatter-graph'})
+            ]))
+        if 'Work Patterns Over Time' in selected_graphs:
+            tabs.append(dcc.Tab(label='Work Patterns Over Time', children=[
+                dcc.Graph(id={'type': 'graph', 'index': 'work-patterns-over-time-graph'})
+            ]))
+        if 'Repeated Actions By User' in selected_graphs:
+            tabs.append(dcc.Tab(label='Repeated Actions By User', children=[
+                dcc.Graph(id={'type': 'graph', 'index': 'repeated-actions-by-user-graph'}),
+                html.H2('Grouped Actions Descriptions:'),
+                html.Div(id={'type': 'collapse-div', 'index': 'repeated-actions'})
+            ]))
+        return tabs
 
     def landing_page_layout(self):
         image_path = "/static/homepage_image.jpg"
@@ -256,6 +267,9 @@ class DashPageLayouts:
                                       threshold_percentage=threshold_percentage)
 
     def create_repeated_actions_graph(self, dataframe):
+        if dataframe.empty:
+            return go.Figure()  # Return an empty graph
+
         return self._create_stacked_bar_chart(df=dataframe,
                                               x='User',
                                               y='Count',
@@ -266,6 +280,9 @@ class DashPageLayouts:
                                                       'Action': 'Action Description'})
 
     def create_advanced_basic_actions_graph(self, dataframe):
+        if dataframe.empty:
+            return go.Figure()  # Return an empty graph
+
         return self._create_stacked_bar_chart(df=dataframe,
                                               x='Action Count',
                                               y='User',
@@ -396,13 +413,21 @@ class DashPageLayouts:
         max_date = self.df_handler.max_date
         min_date = self.df_handler.min_date
 
+        graph_options = [
+            {'label': 'Action Frequency by User', 'value': 'Action Frequency by User'},
+            {'label': 'Work Patterns Over Time', 'value': 'Work Patterns Over Time'},
+            {'label': 'Project Time Distribution', 'value': 'Project Time Distribution'},
+            {'label': 'Repeated Actions By User', 'value': 'Repeated Actions By User'},
+            {'label': 'Advanced vs. Basic Actions', 'value': 'Advanced vs. Basic Actions'},
+        ]
+
         return html.Div([
             html.Div(id='log-switch-trigger', style={'display': 'none'}),
             self._create_filter_row('document-dropdown', 'Select Document', self.df_handler.filters_data['documents'],
                                     'select-all-documents', 'clear-all-documents'),
             self._create_filter_row('user-dropdown', 'Select User', self.df_handler.filters_data['users'],
                                     'select-all-users', 'clear-all-users'),
-            self._create_filter_row('graphs-dropdown', 'Select Graphs', self.df_handler.filters_data['graphs'],
+            self._create_filter_row('graphs-dropdown', 'Select Graphs', graph_options,
                                     'select-all-graphs', 'clear-all-graphs'),
             dbc.Row([
                 dbc.Col(
@@ -691,9 +716,6 @@ class DashPageLayouts:
                 )
 
                 items.append(dbc.Card([header, body]))
-
-        else:
-            return html.P("No data to display")
 
         return items
 

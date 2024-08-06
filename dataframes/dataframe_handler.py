@@ -354,16 +354,7 @@ class DataFrameHandler:
         self.df = self.raw_df = pd.DataFrame(data[data_key]['data'])
 
     @staticmethod
-    def prepare_data_for_collapsible_list(dataframe, type = ''):
-        """
-        Prepare data frame for collapsible list creation with action counts.
-
-        Parameters:
-            dataframe (pd.DataFrame): The data frame to process.
-
-        Returns:
-            pd.DataFrame or None: The processed data frame with action counts.
-        """
+    def prepare_data_for_collapsible_list(dataframe, type=''):
         if type == 'repeated_actions':
             df = dataframe.sort_values(by=['User', 'Time'])
             return df.groupby(['Action', 'User', 'Description']).size().reset_index(name='Count')
