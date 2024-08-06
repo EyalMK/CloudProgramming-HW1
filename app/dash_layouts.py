@@ -432,11 +432,29 @@ class DashPageLayouts:
         )
 
     def upload_log_layout(self):
+        """
+        Creates the layout for the log upload page.
+
+        This method returns a layout for uploading JSON log files. It includes a card with an upload component
+        for file selection and upload.
+
+        Returns:
+            html.Div: A Div containing the layout for uploading logs.
+        """
         return self._create_layout("Upload Log", [
             self._create_card("Upload JSON", self._create_upload_component(), 12)
         ])
 
     def chatbot_layout(self):
+        """
+        Creates the layout for the Chatbot Assistant page.
+
+        This method returns a layout that includes a card with a chatbot interface. The chatbot has an initial greeting
+        message and provides input and send button components for user interaction.
+
+        Returns:
+            html.Div: A Div containing the layout for the Chatbot Assistant page.
+        """
         initial_greeting = ("**ShapeFlowBot:** Hello! I'm ShapeFlowBot! I can assist you with various questions "
                             "regarding ShapeFlow Monitor. How can I help you today?")
 
@@ -475,9 +493,25 @@ class DashPageLayouts:
 
     @staticmethod
     def create_empty_graph():
+        """
+        Creates and returns an empty Plotly graph figure.
+
+        Returns:
+            go.Figure: An empty Plotly figure object.
+        """
         return go.Figure()
 
     def create_project_time_distribution_graph(self, dataframe):
+        """
+        Creates a pie chart showing the distribution of time spent on different project tabs.
+
+        Parameters:
+            dataframe (pd.DataFrame): The DataFrame containing the data for the pie chart.
+                It should include 'Tab' and 'Time Spent (hours)' columns.
+
+        Returns:
+            go.Figure: A Plotly figure object representing the pie chart.
+        """
         threshold_percentage = 0.4
         return self._create_pie_chart(
             df=dataframe,
@@ -495,17 +529,32 @@ class DashPageLayouts:
         )
 
     def create_repeated_actions_graph(self, dataframe):
+        """
+        Creates a stacked bar chart to analyze repeated actions by users.
+
+        Parameters:
+            dataframe (pd.DataFrame): The DataFrame containing the data for the stacked bar chart.
+                It should include 'User', 'Count', and 'Action' columns.
+
+        Returns:
+            go.Figure: A Plotly figure object representing the stacked bar chart.
+        """
         if dataframe.empty:
             return go.Figure()  # Return an empty graph
 
-        return self._create_stacked_bar_chart(df=dataframe,
-                                              x='User',
-                                              y='Count',
-                                              color='Action',
-                                              title='Repeated Actions Analysis by User',
-                                              orientation='v',
-                                              labels={'User': 'User', 'Count': 'Repetition Count',
-                                                      'Action': 'Action Description'})
+        return self._create_stacked_bar_chart(
+            df=dataframe,
+            x='User',
+            y='Count',
+            color='Action',
+            title='Repeated Actions Analysis by User',
+            orientation='v',
+            labels={
+                'User': 'User',
+                'Count': 'Repetition Count',
+                'Action': 'Action Description'
+            }
+        )
 
     def create_advanced_basic_actions_graph(self, dataframe):
         if dataframe.empty:
