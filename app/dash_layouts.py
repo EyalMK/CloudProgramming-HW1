@@ -15,7 +15,29 @@ from dataframes.dataframe_handler import DataFrameHandler
 
 
 class DashPageLayouts:
+    """
+    This class is responsible for defining the layout and callbacks for the Dash application pages.
+
+    Attributes:
+        dash_app (dash.Dash): The Dash application instance.
+        db_handler (DatabaseHandler): The handler for database interactions.
+        df_handler (DataFrameHandler): The handler for data frame operations.
+        lightly_refined_df (pd.DataFrame): A DataFrame to store lightly refined data.
+        graph_processed_df (pd.DataFrame): A DataFrame to store data processed for graphing.
+        uploaded_json (dict): A placeholder for uploaded JSON data.
+        data_source_title (str): The title of the selected log for data source.
+        utils (Utilities): A utility class instance for logging and other utilities.
+    """
+
     def __init__(self, dash_app: dash.Dash, db_handler: 'DatabaseHandler', utils):
+        """
+        Initializes the DashPageLayouts class with the given parameters and sets up the layout and callbacks.
+
+        Parameters:
+            dash_app (dash.Dash): The Dash application instance.
+            db_handler (DatabaseHandler): The handler for database interactions.
+            utils: A utility class instance for logging and other utilities.
+        """
         self.dash_app = dash_app
         self.db_handler = db_handler
         self.df_handler = DataFrameHandler(db_handler, utils)
@@ -29,21 +51,67 @@ class DashPageLayouts:
         self.utils.logger.info("Dash app pages loaded, and dataframes processed.")
 
     def create_callbacks(self):
+        """
+        Initializes the DashCallbacks class, setting up the callbacks for the Dash application.
+
+        This method creates an instance of the DashCallbacks class, passing necessary parameters to it.
+        It is responsible for setting up all the callbacks that handle the interactions within the Dash app.
+        """
         DashCallbacks(self.dash_app, self.df_handler, self.db_handler, self, self.utils)
 
     # Define individual page layouts with graphs and filters
     def dashboard_layout(self):
-        return self._create_layout("Dashboard", [
-            self._create_card("Activity Over Time", dcc.Graph(figure=self._create_line_chart(
-                self.df_handler.activity_over_time, 'Date', 'ActivityCount', 'Activity Over Time')
-            ), 12),
-            self._create_card("Document Usage Frequency", dcc.Graph(figure=self._create_bar_chart(
-                self.df_handler.document_usage, 'Document', 'UsageCount', 'Document Usage Frequency')
-            ), 6),
-            self._create_card("User Activity Distribution", dcc.Graph(figure=self._create_pie_chart(
-                self.df_handler.user_activity, 'User', 'ActivityCount', 'User Activity Distribution')
-            ), 6)
-        ])
+        """
+        Defines the layout for the dashboard page of the Dash application.
+
+        This method creates a structured layout for the dashboard page, including various cards
+        that display graphs for activity over time, document usage frequency, and user activity distribution.
+
+        Returns:
+            html.Div: A Dash HTML Div component containing the layout of the dashboard page.
+        """
+        return self._create_layout(
+            "Dashboard",
+            [
+                self._create_card(
+                    "Activity Over Time",
+                    dcc.Graph(
+                        figure=self._create_line_chart(
+                            self.df_handler.activity_over_time,
+                            x='Date',
+                            y='ActivityCount',
+                            title='Activity Over Time'
+                        )
+                    ),
+                    width=12
+                ),
+                self._create_card(
+                    "Document Usage Frequency",
+                    dcc.Graph(
+                        figure=self._create_bar_chart(
+                            self.df_handler.document_usage,
+                            x='Document',
+                            y='UsageCount',
+                            title='Document Usage Frequency'
+                        )
+                    ),
+                    width=6
+                ),
+                self._create_card(
+                    "User Activity Distribution",
+                    dcc.Graph(
+                        figure=self._create_pie_chart(
+                            self.df_handler.user_activity,
+                            names='User',
+                            values='ActivityCount',
+                            title='User Activity Distribution'
+                        )
+                    ),
+                    width=6
+                )
+            ]
+        )
+
 
     def working_hours_layout(self):
         return self._create_layout("Working Hours Analysis", [
