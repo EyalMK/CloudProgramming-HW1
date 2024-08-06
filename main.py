@@ -13,7 +13,7 @@ def setup_ngrok_auth():
     This function sets the Ngrok authentication token based on the environment variable
     if the application is running in a development or testing environment.
     """
-    if runtime_environment in [RuntimeEnvironments.DEV.value, RuntimeEnvironments.TEST.value]:
+    if runtime_environment in [RuntimeEnvironments.PROD.value, RuntimeEnvironments.TEST.value]:
         conf.get_default().auth_token = os.environ.get("NGROK_TOKEN")
 
 

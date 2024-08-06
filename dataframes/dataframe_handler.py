@@ -83,6 +83,7 @@ class DataFrameHandler:
             self._group_document_usage()
             self._group_user_activity()
             self._generate_alerts_df()
+            self.set_max_min_dates()
 
     def update_with_new_data(self, collection_name, file_name):
         """
@@ -128,12 +129,14 @@ class DataFrameHandler:
                 self.utils.logger.info(f"Loaded {file_name} from database and cached it.")
             else:
                 # Handle case when data is None
-                self.utils.logger.error(f"No data found for {file_name} in {collection_name}.")
+                if collection_name == DatabaseCollections.UPLOADED_LOGS.value:
+                    self.utils.logger.error(f"No data found for {file_name} in {collection_name}.")
+                else:
+                    self.utils.logger.warn(f"No default source log data found for graph initialization.")
                 data = {}
                 self._dataframes_from_data(data, file_name)
 
         self.process_df()  # Reprocess the DataFrame
-        self.set_max_min_dates()
 
     def get_unread_alerts_count(self):
         """
@@ -404,9 +407,12 @@ class DataFrameHandler:
                     self.selected_log_name = file_name
                     data_key = key
                     break
-        if data_key is None:
+        if data_key is None and hasattr(data, '__iter__') and len(data) > 0:
             self.selected_log_name = 'Default Log'
             data_key = next(iter(data))  # First key
+        else:
+            self.loaded_df = None
+            return
         self.loaded_df = pd.DataFrame(data[data_key]['data'])
 
     @staticmethod

@@ -8,7 +8,10 @@ from enum import Enum
 PROJECT_NAME = "ShapeFlow Monitor"
 PORT = 8050
 FONT_AWESOME_CDN = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+
+# Should be in a .env file
 DB_CONN_URL = "https://shapeflow-monitor-final-default-rtdb.europe-west1.firebasedatabase.app/"
+
 ONSHAPE_GLOSSARY_URL = "https://cad.onshape.com/help/Content/Glossary/glossary.htm?tocpath=_____19"
 DEFAULT_MIN_DATE = date(2022, 4, 21).strftime('%d-%m-%Y')
 DEFAULT_MAX_DATE = datetime.now().strftime('%d-%m-%Y')
@@ -44,7 +47,6 @@ ACTION_MAP = {
 }
 
 
-# Todo: refactor and import from .env.development/.env.testing
 # Environment Configuration
 def load_environment_config():
     """
@@ -54,7 +56,7 @@ def load_environment_config():
     os.environ["ALERT_TIMEWINDOW"] = "1h"
     os.environ["UNDO_REDO_THRESHOLD"] = "15"
 
-    runtime_env = os.environ.get("RUNTIME_ENVIRONMENT", RuntimeEnvironments.DEV.value)
+    runtime_env = os.environ.get("RUNTIME_ENVIRONMENT", RuntimeEnvironments.PROD.value)
     os.environ["RUNTIME_ENVIRONMENT"] = runtime_env
 
     return RuntimeEnvironments(runtime_env)

@@ -86,7 +86,7 @@ class App:
         """
         @self.server.route('/')
         def index():
-            self.dash_app.title = "ShapeFlow Monitor"
+            self.dash_app.title = {PROJECT_NAME}
             return self.dash_app.index()
 
         @self.server.route("/dash/<path>")
