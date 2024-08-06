@@ -19,7 +19,6 @@ class DataFrameHandler:
     Attributes:
         db_handler (DatabaseHandler): An instance for interacting with the database.
         utils (Utilities): An instance providing utility functions such as logging.
-        raw_df (pd.DataFrame): The raw data frame from the logs.
         loaded_df (pd.DataFrame): The processed data frame.
         max_date (datetime): The maximum date for filtering data.
         min_date (datetime): The minimum date for filtering data.
@@ -213,8 +212,8 @@ class DataFrameHandler:
             dataframe (pd.DataFrame): The data frame to filter.
             selected_document (str or list): The selected document(s) to filter.
             selected_user (str or list): The selected user(s) to filter.
-            start_time (str): The start time for filtering.
-            end_time (str): The end time for filtering.
+            start_time (datetime.pyi): The start time for filtering.
+            end_time (datetime.pyi): The end time for filtering.
 
         Returns:
             pd.DataFrame: The filtered data frame.
@@ -410,7 +409,8 @@ class DataFrameHandler:
             data_key = next(iter(data))  # First key
         self.loaded_df = pd.DataFrame(data[data_key]['data'])
 
-    def _convert_time_column(self, dataframe):
+    @staticmethod
+    def _convert_time_column(dataframe):
         """
         Ensure the 'Time' column in the provided DataFrame is properly parsed to datetime.
 
