@@ -112,18 +112,42 @@ class DashPageLayouts:
             ]
         )
 
-
     def working_hours_layout(self):
-        return self._create_layout("Working Hours Analysis", [
-            self._create_card("Working Hours Overview", dcc.Graph(
-                figure=self._create_working_hours_chart()  # Directly use the figure from _create_working_hours_chart
-            ), 12),
-            self._create_card("Night & Weekend & Holidays Work Occurrences",
-                              dcc.Graph(figure=self._create_stacked_bar_chart(
-                                  self._create_occurrences_chart(), y='User', x='Occurrences Count',
-                                  title='Night & Weekend & Holidays Work Occurrences', color='Type')
-                              ), 12)
-        ])
+        """
+        Defines the layout for the working hours analysis page of the Dash application.
+
+        This method creates a structured layout for the working hours analysis page, including cards
+        that display graphs for the working hours overview and the occurrences of work during nights,
+        weekends, and holidays.
+
+        Returns:
+            html.Div: A Dash HTML Div component containing the layout of the working hours analysis page.
+        """
+        return self._create_layout(
+            "Working Hours Analysis",
+            [
+                self._create_card(
+                    "Working Hours Overview",
+                    dcc.Graph(
+                        figure=self._create_working_hours_chart()
+                    ),
+                    width=12
+                ),
+                self._create_card(
+                    "Night & Weekend & Holidays Work Occurrences",
+                    dcc.Graph(
+                        figure=self._create_stacked_bar_chart(
+                            df=self._create_occurrences_chart(),
+                            x='Occurrences Count',
+                            y='User',
+                            title='Night & Weekend & Holidays Work Occurrences',
+                            color='Type'
+                        )
+                    ),
+                    width=12
+                )
+            ]
+        )
 
     def graphs_layout(self):
         self.handle_initial_graph_dataframes()
