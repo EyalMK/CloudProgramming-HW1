@@ -413,13 +413,8 @@ class DashPageLayouts:
         max_date = self.df_handler.max_date
         min_date = self.df_handler.min_date
 
-        graph_options = [
-            {'label': 'Action Frequency by User', 'value': 'Action Frequency by User'},
-            {'label': 'Work Patterns Over Time', 'value': 'Work Patterns Over Time'},
-            {'label': 'Project Time Distribution', 'value': 'Project Time Distribution'},
-            {'label': 'Repeated Actions By User', 'value': 'Repeated Actions By User'},
-            {'label': 'Advanced vs. Basic Actions', 'value': 'Advanced vs. Basic Actions'},
-        ]
+        graph_options = self.utils.get_supported_graphs()
+        default_graph_options = [option['value'] for option in graph_options]
 
         return html.Div([
             html.Div(id='log-switch-trigger', style={'display': 'none'}),
@@ -428,7 +423,7 @@ class DashPageLayouts:
             self._create_filter_row('user-dropdown', 'Select User', self.df_handler.filters_data['users'],
                                     'select-all-users', 'clear-all-users'),
             self._create_filter_row('graphs-dropdown', 'Select Graphs', graph_options,
-                                    'select-all-graphs', 'clear-all-graphs'),
+                                    'select-all-graphs', 'clear-all-graphs', default_value=default_graph_options),
             dbc.Row([
                 dbc.Col(
                     dcc.Dropdown(id='logs-dropdown',
@@ -636,7 +631,7 @@ class DashPageLayouts:
                                           title="Working Hours Overview")
 
     def _create_occurrences_chart(self):
-        df = self.df_handler.df  # Access the preprocessed DataFrame directly
+        df = self.df_handler.loaded_df  # Access the preprocessed DataFrame directly
         if df is None:
             df = pd.DataFrame(columns=['Time', 'User'])
         df['Time'] = pd.to_datetime(df['Time'])

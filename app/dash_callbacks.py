@@ -33,10 +33,8 @@ class DashCallbacks:
         button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
         if 'select-all' in button_id and select_all_clicks:
-            # כאן אנחנו מחזירים את כל הערכים המופיעים ברשימה 'options'
             return [option['value'] for option in options]
         elif 'clear-all' in button_id and clear_all_clicks:
-            # כאן אנחנו מחזירים רשימה ריקה כדי לנקות את כל הבחירות
             return []
         return dash.no_update
 
@@ -78,6 +76,17 @@ class DashCallbacks:
             return self.page_layouts.create_repeated_actions_graph(self.df_handler.setup_repeated_actions_by_user_graph_dataframe(filtered_df)), collapsible_list
 
         return self.page_layouts.create_empty_graph(), None
+
+    def process_json_filename(self, filename, default_data_source):
+        processed_filename = filename
+        if default_data_source:
+            processed_filename = "default.json"
+        else:
+            index = 1
+            while processed_filename in self.df_handler.filters_data['uploaded-logs']:
+                processed_filename = f"{filename.split('.json')[0]} ({index}).json"
+                index += 1
+        return processed_filename
 
     def register_callbacks(self):
         # Callback to update graphs
@@ -122,13 +131,12 @@ class DashCallbacks:
             # And then update processed-df and pre-processed-df attributes in the graphs_layout
             if selected_log and self.df_handler.selected_log_name != selected_log:
                 is_default_source = selected_log.lower() == 'default log'
-                collection_data = self.db_handler.read_from_database(
-                    DatabaseCollections.ONSHAPE_LOGS.value if is_default_source else DatabaseCollections.UPLOADED_LOGS.value)
-                if collection_data is None:
-                    self.utils.logger.error(f"No log data available for selected log: {selected_log}")
-                    return [dash.no_update] * 17
-                self.df_handler.handle_switch_log_source(collection_data, file_name=selected_log)
+                collection_name = DatabaseCollections.ONSHAPE_LOGS.value if is_default_source else DatabaseCollections.UPLOADED_LOGS.value
+                processed_filename = 'default.json' if is_default_source else selected_log
+
+                self.df_handler.handle_switch_log_source(collection_name, file_name=processed_filename)
                 dataframe = self.page_layouts.handle_initial_graph_dataframes()
+
                 full_range_start_time = value_start_time = self.df_handler.min_date  # Get new dates
                 full_range_end_time = value_end_time = self.df_handler.max_date
 
@@ -190,11 +198,7 @@ class DashCallbacks:
                     try:
                         json_data = json.loads(decoded)
 
-                        processed_filename = filename
-                        index = 1
-                        while processed_filename in self.df_handler.filters_data['uploaded-logs']:
-                            processed_filename = f"{filename.split('.json')[0]} ({index}).json"
-                            index += 1
+                        processed_filename = self.process_json_filename(filename, default_data_source)
 
                         data_to_store = {
                             "fileName": processed_filename,
@@ -218,10 +222,12 @@ class DashCallbacks:
                         collection_name = DatabaseCollections.ONSHAPE_LOGS.value if default_data_source else DatabaseCollections.UPLOADED_LOGS.value
 
                         self.db_handler.write_to_database(collection_name, self.page_layouts.uploaded_json)
-                        self.utils.logger.info(f"Uploaded JSON of size: {size_kb:.2f} KB")
+                        processed_filename = self.process_json_filename(filename, default_data_source)
+
+                        self.utils.logger.info(f"Uploaded JSON: {processed_filename} of size: {size_kb:.2f} KB")
 
                         # Notify DataFrameHandler to update its state
-                        self.df_handler.update_with_new_data(collection_name)
+                        self.df_handler.update_with_new_data(collection_name, processed_filename)
 
                         return dash.no_update, dash.no_update, "File has been uploaded successfully.", str(
                             self.df_handler.get_unread_alerts_count())

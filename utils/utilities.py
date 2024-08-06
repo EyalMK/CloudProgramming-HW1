@@ -55,6 +55,16 @@ class Utilities:
         self.logger.addHandler(console_logger)
 
     @staticmethod
+    def get_supported_graphs():
+        return [
+            {'label': 'Action Frequency by User', 'value': 'Action Frequency by User'},
+            {'label': 'Work Patterns Over Time', 'value': 'Work Patterns Over Time'},
+            {'label': 'Project Time Distribution', 'value': 'Project Time Distribution'},
+            {'label': 'Repeated Actions By User', 'value': 'Repeated Actions By User'},
+            {'label': 'Advanced vs. Basic Actions', 'value': 'Advanced vs. Basic Actions'},
+        ]
+
+    @staticmethod
     def categorize_action(description):
         """
         Categorizes an action based on the given description.
