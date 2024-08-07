@@ -86,10 +86,10 @@ def load_environment_config():
     os.environ["CANCELLATION_TIMEWINDOW"] = "30min"  # In minutes
     os.environ["CANCELLATION_THRESHOLD"] = "4"
 
-    runtime_env = os.environ.get("RUNTIME_ENVIRONMENT", RuntimeEnvironments.PROD.value)
+    runtime_env = RuntimeEnvironments.PROD.value
     os.environ["RUNTIME_ENVIRONMENT"] = runtime_env
 
-    return RuntimeEnvironments(runtime_env)
+    return runtime_env
 
 
 runtime_environment = load_environment_config()
