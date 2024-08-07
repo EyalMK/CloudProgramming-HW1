@@ -6,7 +6,7 @@ import requests
 from flask import Flask, send_from_directory
 from pyngrok import ngrok
 from app.dash_layouts import DashPageLayouts
-from config.constants import FONT_AWESOME_CDN, RuntimeEnvironments, PORT, PROJECT_NAME
+from config.constants import FONT_AWESOME_CDN, RuntimeEnvironments, PORT, PROJECT_NAME, runtime_environment
 from database.db_handler import DatabaseHandler
 from utils.utilities import Utilities
 
@@ -54,7 +54,8 @@ class App:
                                       external_stylesheets=[dbc.themes.BOOTSTRAP, FONT_AWESOME_CDN])
             self.dash_app.config.suppress_callback_exceptions = True
             self.dash_page_layouts = DashPageLayouts(self.dash_app, self.db_handler, self.utils)
-            self._initialize_server()
+            if runtime_environment in [RuntimeEnvironments.DEV.value, RuntimeEnvironments.TEST.value]:
+                self._initialize_server()
             self._setup_routes()
             self.initialized = True
 
@@ -136,7 +137,7 @@ class App:
 
         The server runs in debug mode if the runtime environment is development or test.
         """
-        debug_mode = (os.environ["RUNTIME_ENVIRONMENT"] in
+        debug_mode = (runtime_environment in
                       [RuntimeEnvironments.DEV.value, RuntimeEnvironments.TEST.value])
         self.utils.logger.info(f"=============== {PROJECT_NAME} is Running ===============")
         self.dash_app.run_server(debug=debug_mode, use_reloader=debug_mode, port=PORT, dev_tools_props_check=False)
