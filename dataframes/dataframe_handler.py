@@ -527,7 +527,8 @@ class DataFrameHandler:
             self.user_activity = self.loaded_df['User'].value_counts().reset_index(name='ActivityCount')
             self.user_activity.columns = ['User', 'ActivityCount']
 
-    def _format_time_window(self, time_window):
+    @staticmethod
+    def _format_time_window(time_window):
         """
         Format the time window as "X minutes" or "Y hours".
 
@@ -543,9 +544,31 @@ class DataFrameHandler:
         hours, remainder = divmod(total_seconds, 3600)
         minutes, _ = divmod(remainder, 60)
 
+        minute_prefix = 's' if minutes > 1 else ''
+        hour_prefix = 's' if hours > 1 else ''
+        formatted_hour_string = f"{hours} hour{hour_prefix}"
+        formatted_minutes_string = f"{minutes} minute{minute_prefix}"
+
         if hours > 0:
-            return f"{hours} hours" if minutes == 0 else f"{hours} hours and {minutes} minutes"
-        return f"{minutes} minutes"
+            return formatted_hour_string if minutes == 0 else f"{formatted_hour_string} and {formatted_minutes_string}"
+        return formatted_minutes_string
+
+    @staticmethod
+    def _convert_time_window_to_minutes(time_window):
+        """
+        Convert the time window string to minutes if it's in fractional hours.
+
+        Parameters:
+            time_window (str): The time window to convert.
+
+        Returns:
+            str: The converted time window in minutes.
+        """
+        if isinstance(time_window, str) and 'h' in time_window:
+            hours_fraction = float(time_window.replace('h', ''))
+            minutes = int(hours_fraction * 60)
+            return f"{minutes}min"
+        return time_window
 
     def _undo_redo_activity_detection(self):
         """
@@ -556,9 +579,10 @@ class DataFrameHandler:
         redo_undo_df = self.loaded_df[self.loaded_df['Description'].str.contains('Undo|Redo', case=False)].copy()
 
         # Set a time window for detecting high frequency of actions
-        configured_time_window = os.environ.get("ALERT_TIMEWINDOW", "1h")
+        configured_time_window = os.environ.get("ALERT_TIMEWINDOW", "60min")
         formatted_time_window = self._format_time_window(configured_time_window)
-        redo_undo_df['TimeWindow'] = redo_undo_df['Time'].dt.floor(configured_time_window)
+        redo_undo_df['TimeWindow'] = redo_undo_df['Time'].dt.floor(self._convert_time_window_to_minutes(configured_time_window))
+        # redo_undo_df['TimeWindow'] = redo_undo_df['Time'].dt.floor(configured_time_window)
         grouped = redo_undo_df.groupby(['User', 'Document', 'TimeWindow']).size().reset_index(name='Count')
 
         # Filter the groups that exceed the threshold
@@ -651,15 +675,16 @@ class DataFrameHandler:
         Updates the `alerts_df` attribute with detected alerts.
         """
         # Set a time window and threshold for detecting high frequency of cancellations
-        time_window = os.environ.get("CANCELLATION_TIMEWINDOW", "0.5h")
-        formatted_time_window = self._format_time_window(time_window)
+        configured_time_window = os.environ.get("CANCELLATION_TIMEWINDOW", "30min")
+        formatted_time_window = self._format_time_window(configured_time_window)
         threshold = int(os.environ.get("CANCELLATION_THRESHOLD", 3))
 
         # Filter for cancellation actions
         cancellation_df = self.loaded_df[self.loaded_df['Description'].str.contains('Cancel', case=False)].copy()
 
         # Set a time window for detecting high frequency of actions
-        cancellation_df['TimeWindow'] = cancellation_df['Time'].dt.floor(time_window)
+        cancellation_df['TimeWindow'] = cancellation_df['Time'].dt.floor(self._convert_time_window_to_minutes(configured_time_window))
+        # cancellation_df['TimeWindow'] = cancellation_df['Time'].dt.floor(configured_time_window)
         grouped = cancellation_df.groupby(['User', 'Document', 'TimeWindow']).size().reset_index(name='Count')
 
         # Filter the groups that exceed the threshold
