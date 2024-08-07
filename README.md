@@ -5,8 +5,10 @@ ShapeFlow Monitor is a cloud-based web application designed for analyzing and vi
 ## Table of Contents
 - [Features](#features)
 - [Getting Started](#getting-started)
-    - [Prerequisites](#prerequisites)
+    - [Prerequisites](##prerequisites)
 - [Installation](#installation)
+    - [Using Google Colab](#using-google-colab)
+    - [Local Installation](#local-installation)
 - [Environment Configuration](#environment-configuration)
 - [Project Structure](#project-structure)
 - [Key Classes](#key-classes)
@@ -38,13 +40,13 @@ ShapeFlow Monitor is a cloud-based web application designed for analyzing and vi
 ## Installation
 
 ### *Using Google Colab*
-1. Head to https://colab.research.google.com/
-2. Click File in the menu, and open notebook
-3. Select GitHub tab
+1. Head to [Google Colab](https://colab.research.google.com/)
+2. Click **File** in the menu, and open notebook
+3. Select **GitHub** tab
 4. Search for GitHub user: ``` EyalMK```
-5. Select repository ShapeFlow-Monitor-Cloud
-6. Select branch HW3
-7. Open main.ipynb
+5. Select repository **ShapeFlow-Monitor-Cloud**
+6. Select branch **HW3**
+7. Open `main.ipynb`
 8. Execute all cells.
 
 ### *Local Installation*
@@ -68,10 +70,9 @@ ShapeFlow Monitor is a cloud-based web application designed for analyzing and vi
 
 ## Environment Configuration
 Environment variables are stored in the constants.py file located in the config directory of the project. 
-The required variables are:
-
-- `NGROK_TOKEN`: Your Ngrok authentication token. Critical in Google Colab.
-- `DB_CONN_URL`: Your Firebase realtime database connection url.
+- The required variables are:
+  - `NGROK_TOKEN`: Your Ngrok authentication token.
+  - `DB_CONN_URL`: Your Firebase realtime database connection url.
 
 ## Project Structure
 ShapeFlow Monitor/
@@ -111,51 +112,40 @@ ShapeFlow Monitor/
 └──  setup.py
 ```
 
-## Key Classes
+## Key Classes 
 
 ### App
-- **app/app.py**
-- Main class that initializes and runs the Dash application.
+- ```app/app.py``` Main class that initializes and runs the Dash application.
 
 ### DashPageLayouts
-- **app/dash_layouts.py**
-- Manages the layouts and graphs of the Dash application.
+- ```app/dash_layouts.py``` Manages the layouts and graphs of the Dash application.
 
 ### DashCallbacks
-- **app/dash_callbacks.py**
-- Manages the callbacks for the Dash application.
+- ```app/dash_callbacks.py``` Manages the callbacks for the Dash application.
 
 ### ChatBot
-- **chatbot/chat_bot.py**
-- Represents the chatbot that uses predefined patterns and reflections to respond to user inputs.
+- ```chatbot/chat_bot.py``` Represents the chatbot that uses predefined patterns and reflections to respond to user inputs.
 
 ### PatternsHandler
-- **chatbot/patterns_handler.py**
-- Manages the retrieval and storage of chatbot patterns from the database.
+- ```chatbot/patterns_handler.py``` Manages the retrieval and storage of chatbot patterns from the database.
 
 ### DatabaseHandler
-- **database/db_handler.py**
-- Manages database operations with Firebase.
+- ```database/db_handler.py``` Manages database operations with Firebase.
 
 ### DatabaseLogger
-- **logger/database_logger.py**
-- Custom logging handler that sends log messages to a database.
+- ```logger/database_logger.py``` Custom logging handler that sends log messages to a database.
 
 ### Scraper
-- **search_engine/scraper.py**
-- Simple web scraper class to fetch and parse HTML pages.
+- ```search_engine/scraper.py``` Simple web scraper class to fetch and parse HTML pages.
 
 ### SearchEngine
-- **search_engine/search_engine.py**
-- Implements a search engine for indexing and querying words from a glossary.
+- ```search_engine/search_engine.py``` Implements a search engine for indexing and querying words from a glossary.
 
 ### DataFrameHandler
-- **dataframes/dataframe_handler.py**
-- Manages data frame operations, including filtering, processing, analyzing and caching data from logs.
+- ```dataframes/dataframe_handler.py``` Manages data frame operations, including filtering, processing, analyzing and caching data from logs.
 
 ### Utilities
-- **utils/utilities.py**
-- Provides various utility functions and objects such as logger.
+- ```utils/utilities.py``` Provides various utility functions and objects such as logger.
 
 ## Key Functions
 
@@ -165,7 +155,6 @@ ShapeFlow Monitor/
 |:---------------------------|:-------------------------------------------------------------------------------------|
 | setup_ngrok_auth()         | Configures Ngrok authentication if the runtime environment is production or testing. |
 | main()                     | Main entry point for the application.                                                |
-| Method                     | Description                                                                          |
 | setup_logger(self)         | Sets up logging to console and database.                                             |
 | get_supported_graphs(self) | Returns a list of the supported graphs.                                              |
 
@@ -275,7 +264,6 @@ ShapeFlow Monitor/
 | setup_logger(self)         | Sets up logging to console and database. |
 | get_supported_graphs(self) | Returns a list of the supported graphs.  |
 
-
 ## Design Patterns
 * **Singleton**: The application uses the Singleton design pattern to ensure that only one instance of the database handler, database logger, dataframe handler and app is created.
 * **Adapter**: The application uses the Adapter design pattern to adapt the database logger to the logging module.
@@ -285,20 +273,20 @@ ShapeFlow Monitor/
 
 * `python main.py`: Starts the application.
 
-## Dependencies
+## **Dependencies**
 
-- [dash](https://dash.plotly.com/): Web application framework for Python.
-- [dash-bootstrap-components](https://dash-bootstrap-components.opensource.faculty.ai/): Bootstrap components for Dash.
-- [firebase](https://firebase.google.com/docs/reference/rest/database): Firebase integration.
-- [flask](https://flask.palletsprojects.com/): Web framework for Python.
-- [pyngrok](https://pyngrok.readthedocs.io/en/latest/): ngrok integration.
-- [pandas](https://pandas.pydata.org/): Data analysis and manipulation library.
-- [plotly](https://plotly.com/python/): Graphing library for making interactive charts.
-- [beautifulsoup4](https://www.crummy.com/software/BeautifulSoup/bs4/doc/): Library for web scraping.
-- [nltk](https://www.nltk.org/): Natural Language Toolkit.
-- [requests](https://docs.python-requests.org/en/latest/): HTTP library for Python.
+- [**dash**](https://dash.plotly.com/): Web application framework for Python.
+- [**dash-bootstrap-components**](https://dash-bootstrap-components.opensource.faculty.ai/): Bootstrap components for Dash.
+- [**firebase**](https://firebase.google.com/docs/reference/rest/database): Firebase integration.
+- [**flask**](https://flask.palletsprojects.com/): Web framework for Python.
+- [**pyngrok**](https://pyngrok.readthedocs.io/en/latest/): ngrok integration.
+- [**pandas**](https://pandas.pydata.org/): Data analysis and manipulation library.
+- [**plotly**](https://plotly.com/python/): Graphing library for making interactive charts.
+- [**beautifulsoup4**](https://www.crummy.com/software/BeautifulSoup/bs4/doc/): Library for web scraping.
+- [**nltk**](https://www.nltk.org/): Natural Language Toolkit.
+- [**requests**](https://docs.python-requests.org/en/latest/): HTTP library for Python.
 
-## Development Tools
+## **Development Tools**
 
-- [venv](https://docs.python.org/3/library/venv.html): Creation of virtual environments.
-- [ngrok](https://ngrok.com/): Secure introspectable tunnels to localhost.
+- [**venv**](https://docs.python.org/3/library/venv.html): Creation of virtual environments.
+- [**ngrok**](https://ngrok.com/): Secure introspectable tunnels to localhost.
