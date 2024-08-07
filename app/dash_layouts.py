@@ -692,7 +692,7 @@ class DashPageLayouts:
                 [
                     self._create_nav_link("fas fa-house", " Home", "/"),
                     self._create_nav_link("fas fa-tachometer-alt", " Dashboard", "/dashboard"),
-                    self._create_nav_link("fas fa-chart-line", " Graphs", "/graphs"),
+                    self._create_nav_link("fas fa-chart-line", " Advanced Analytics", "/advanced-analytics"),
                     self._create_nav_link("fas fa-cloud", " Upload Logs", "/upload-log"),
                     self._create_nav_link("fas fa-magnifying-glass", " Search Glossary", "/search-glossary"),
                     self._create_nav_link("fas fa-clock", " Working Hours", "/working-hours"),

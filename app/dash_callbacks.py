@@ -620,13 +620,13 @@ class DashCallbacks:
             Returns:
             - html.Div: The layout for the corresponding page based on the pathname.
             """
-            if pathname == "/graphs":
-                return self.page_layouts.graphs_layout()
-            elif pathname == "/dashboard":
+            if pathname == "/dashboard":
                 return self.page_layouts.dashboard_layout()
+            elif pathname == "/advanced-analytics":
+                return self.page_layouts.graphs_layout()
             elif pathname == "/alerts":
                 return self.page_layouts.alerts_layout()
-            elif pathname == '/working-hours':  # New Route for Working Hours
+            elif pathname == '/working-hours':
                 return self.page_layouts.working_hours_layout()
             elif pathname == "/search-glossary":
                 return self.page_layouts.search_glossary_layout()
