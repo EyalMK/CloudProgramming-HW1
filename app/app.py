@@ -54,7 +54,7 @@ class App:
                                       external_stylesheets=[dbc.themes.BOOTSTRAP, FONT_AWESOME_CDN])
             self.dash_app.config.suppress_callback_exceptions = True
             self.dash_page_layouts = DashPageLayouts(self.dash_app, self.db_handler, self.utils)
-            if runtime_environment in [RuntimeEnvironments.DEV.value, RuntimeEnvironments.TEST.value]:
+            if runtime_environment in [RuntimeEnvironments.PROD.value, RuntimeEnvironments.TEST.value]:
                 self._initialize_server()
             self._setup_routes()
             self.initialized = True
