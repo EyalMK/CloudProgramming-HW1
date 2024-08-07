@@ -78,7 +78,7 @@ class App:
             print(f'Public URL: {public_url}')
             os.environ["BASE_URL"] = public_url
         except Exception as e:
-            self.utils.logger.warn(f"Skipping ngrok setup... use your own authentication token, as the current one is inuse at this time.")
+            self.utils.logger.error(f"======================\nSkipping ngrok setup... use your own authentication token, as the current one is inuse at this time. This is crucial if the environment is Google Colab.\n======================")
             os.environ["BASE_URL"] = f"http://127.0.0.1:{PORT}"
 
     def _setup_routes(self):
