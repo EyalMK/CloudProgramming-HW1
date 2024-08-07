@@ -1112,9 +1112,19 @@ class DashPageLayouts:
         df, validated_columns = self._validate_graph_data(df, names, values)
         names, values = validated_columns  # Unpack the validated columns
 
+        # Private function to return an empty pie chart with just the title
+        def return_empty_pie_chart():
+            fig = go.Figure()
+            fig.update_layout(
+                title=title,
+                showlegend=True
+            )
+            fig.add_trace(go.Pie(labels=['No Data'], values=[1], hoverinfo='label'))
+            return fig
+
         # If the DataFrame is empty after validation, return an empty pie chart with just the title
         if df.empty:
-            return px.pie(title=title)
+            return return_empty_pie_chart()
 
         # Calculate the total and the percentage for each slice
         total = df[values].sum()
@@ -1125,7 +1135,7 @@ class DashPageLayouts:
 
         # If the DataFrame is empty after filtering, return an empty pie chart with just the title
         if df.empty:
-            return px.pie(title=title)
+            return return_empty_pie_chart()
 
         # Create the pie chart with the given parameters
         pie_chart_params = {

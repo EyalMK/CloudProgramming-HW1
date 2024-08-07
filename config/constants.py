@@ -83,7 +83,7 @@ def load_environment_config():
     os.environ["UNDO_REDO_THRESHOLD"] = "15"
     os.environ["CONTEXT_SWITCH_TIMEWINDOW"] = "30"  # In minutes
     os.environ["CONTEXT_SWITCH_THRESHOLD"] = "10"
-    os.environ["CANCELLATION_TIMEWINDOW"] = "30min"  # In minutes
+    os.environ["CANCELLATION_TIMEWINDOW"] = "12min"  # In minutes
     os.environ["CANCELLATION_THRESHOLD"] = "4"
 
     runtime_env = RuntimeEnvironments.PROD.value
