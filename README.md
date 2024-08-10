@@ -219,10 +219,11 @@ ShapeFlow Monitor/
 
 **database/db_handler.py**
 
-| Method	Description      |
-|:------------------------|
-| read_from_database(self | collection_name)	Reads data from a specific collection in the database.|
-| write_to_database(self  | collection_name| data)	Writes data to a specific collection in the database.|
+| Method                                         | Description                                            |
+|:-----------------------------------------------|:-------------------------------------------------------|
+| read_from_database(self, collection_name)      | Reads data from a specific collection in the database. |
+| write_to_database(self, collection_name, data) | Writes data to a specific collection in the database.  |
+
 
 
 **logger/database_logger.py**
