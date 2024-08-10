@@ -79,6 +79,7 @@ ShapeFlow Monitor/
 ```
 ├── app/
 │   ├── __init__.py
+│   ├── static/
 │   ├── app.py
 │   ├── dash_callbacks.py
 │   └── dash_layouts.py
@@ -103,6 +104,7 @@ ShapeFlow Monitor/
 │   └── scraper.py
 │   └── search_engine.py
 ├── utils/
+│   ├── jsons/
 │   ├── __init__.py
 │   └── utilities.py
 │   └── firebase_curator.sh
